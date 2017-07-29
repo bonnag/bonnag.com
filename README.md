@@ -7,6 +7,6 @@
   * Ethereum Solidity contract development;
   * secure software development lifecycle.
   
-We're proud to supply the software for [UbiTok.io](https://ubitok.io/), the exchange for trading Ethereum tokens.
+We're proud to supply the software for [UbiTok.io](https://ubitok.io/), the unstoppable exchange for trading Ethereum tokens.
 
 email: kieran @ bonnag.com
