@@ -23,14 +23,15 @@ var Engine = Matter.Engine,
 // create an engine
 var engine = Engine.create();
 
-
-var myGamePieceBody = Bodies.rectangle(50, 170, 16, 16);
-var boxA = Bodies.rectangle(200, 100, 40, 40);
-var boxB = Bodies.rectangle(225, 45, 40, 40);
-var ground = Bodies.rectangle(200, 305, 405, 30, { isStatic: true });
-
-// add all of the bodies to the world
-World.add(engine.world, [myGamePieceBody, boxA, boxB, ground]);
+var myGamePieceBody1 = Bodies.rectangle(90, 170, 16, 16);
+var myGamePieceBody2 = Bodies.rectangle(70, 170, 16, 16);
+var myGamePieceBody3 = Bodies.rectangle(50, 170, 16, 16);
+var myGamePieceBody = Matter.Composite.create();
+Matter.Composite.add(myGamePieceBody, myGamePieceBody1);
+Matter.Composite.add(myGamePieceBody, myGamePieceBody2);
+Matter.Composite.add(myGamePieceBody, myGamePieceBody3);
+Matter.Composites.chain(myGamePieceBody, 0, 0, -0, 0, { stiffness: 0.1, length: 16 });
+World.add(engine.world, [myGamePieceBody]);
 
 var myGamePiece;
 var myObstacles = [];
@@ -73,12 +74,12 @@ function startGame() {
       e.preventDefault();
     }
   });
-  boxAComponent = new component(0, 0, 40, 40, "rect", "yellow");
-  boxAComponent.link(boxA);
-  boxBComponent = new component(0, 0, 40, 40, "rect", "blue");
-  boxBComponent.link(boxB);
-  myGamePiece = new component(0, 0, 16, 16, "sprite", "", "", 0, 0, 2);
-  myGamePiece.link(myGamePieceBody);
+  myGamePiece1 = new component(0, 0, 16, 16, "sprite", "", "", 0, 16, 2);
+  myGamePiece1.link(myGamePieceBody1);
+  myGamePiece2 = new component(0, 0, 16, 16, "sprite", "", "", 0, 8, 2);
+  myGamePiece2.link(myGamePieceBody2);
+  myGamePiece3 = new component(0, 0, 16, 16, "sprite", "", "", 0, 0, 2);
+  myGamePiece3.link(myGamePieceBody3);
   myScore = new component(10, 22, 0, 0, "text", "black", "");
   myControlUp = new component(60, 200, 40, 40, "sprite", "", "", 52, 0, 2);
   myControlLeft = new component(25, 235, 40, 40, "sprite", "", "", 10, 0, 2);
@@ -224,10 +225,10 @@ function component(x, y, width, height, type, color, text, spriteX, spriteY, spr
 function updateGameArea() {
     var i, x, height, gap, minHeight, maxHeight, minGap, maxGap;
     for (i = 0; i < myObstacles.length; i += 1) {
-        if (myGamePiece.crashWith(myObstacles[i])) {
+        //if (myGamePiece.crashWith(myObstacles[i])) {
             //myGameArea.stop();
             //return;
-        } 
+        //} 
     }
     myGameArea.clear();
     myGameArea.frameNo += 1;
@@ -246,21 +247,23 @@ function updateGameArea() {
     if (controlStates["spinCw"]) { 
       controlForceT = maxControlForceMagnitude;
     }
-    if (myGamePieceBody.velocity.y < -maxControlVelocity) {
+    if (myGamePieceBody1.velocity.y < -maxControlVelocity) {
       controlForceY = Math.max(0.0, controlForceY);
     }
-    if (myGamePieceBody.velocity.y > maxControlVelocity) {
+    if (myGamePieceBody1.velocity.y > maxControlVelocity) {
       controlForceY = Math.min(0.0, controlForceY);
     }
-    if (myGamePieceBody.velocity.x < -maxControlVelocity) {
+    if (myGamePieceBody1.velocity.x < -maxControlVelocity) {
       controlForceX = Math.max(0.0, controlForceX);
     }
-    if (myGamePieceBody.velocity.x > maxControlVelocity) {
+    if (myGamePieceBody1.velocity.x > maxControlVelocity) {
       controlForceX = Math.min(0.0, controlForceX);
     }
-    Matter.Body.applyForce(myGamePieceBody, myGamePieceBody.position, {x:controlForceX, y:controlForceY});
-    Matter.Body.applyForce(myGamePieceBody, {x:myGamePieceBody.position.x - 10, y:myGamePieceBody.position.y}, {x:0.0, y:-controlForceT});
-    Matter.Body.applyForce(myGamePieceBody, {x:myGamePieceBody.position.x + 10, y:myGamePieceBody.position.y}, {x:0.0, y:+controlForceT});
+    Matter.Body.applyForce(myGamePieceBody1, myGamePieceBody1.position, {x:controlForceX, y:controlForceY});
+    Matter.Body.applyForce(myGamePieceBody2, myGamePieceBody2.position, {x:controlForceX, y:controlForceY});
+    Matter.Body.applyForce(myGamePieceBody3, myGamePieceBody3.position, {x:controlForceX, y:controlForceY});
+    Matter.Body.applyForce(myGamePieceBody1, {x:myGamePieceBody1.position.x - 10, y:myGamePieceBody1.position.y}, {x:0.0, y:-controlForceT});
+    Matter.Body.applyForce(myGamePieceBody1, {x:myGamePieceBody1.position.x + 10, y:myGamePieceBody1.position.y}, {x:0.0, y:+controlForceT});
     if (myGameArea.frameNo == 1 || everyinterval(150)) {
         x = myGameArea.canvas.width;
         y = myGameArea.canvas.height;
@@ -283,11 +286,16 @@ function updateGameArea() {
         var tileCode = myGameWorld[row][col];
         var tileNum = tileCodeToTileNum[tileCode];
         if (!tileNum) continue;
-        var tileComp = new component(col * 16 + 8, row * 16 + 8, 16, 16, "sprite", "", "", (tileNum-1)*9, 26, 2);
+        var tx = col * 16 + 8;
+        var ty = row * 16 + 8;
+        var tileComp = new component(tx, ty, 16, 16, "sprite", "", "", (tileNum-1)*9, 26, 2);
         tileComp.update();
         if (tileCode == '.' || tileCode == 'p' || tileCode == 'q' || tileCode == 'v' || tileCode == 'm') {
-          var tileBody = Bodies.rectangle(col * 16 + 8, row * 16 + 8, 16, 16, { isStatic: true });
-          tempBodies.push(tileBody);
+          if ((Math.abs(tx - myGamePieceBody1.position.x) + Math.abs(ty - myGamePieceBody1.position.y)) < 60 ||
+              (Math.abs(tx - myGamePieceBody3.position.x) + Math.abs(ty - myGamePieceBody3.position.y)) < 60) {
+            var tileBody = Bodies.rectangle(col * 16 + 8, row * 16 + 8, 16, 16, { isStatic: true });
+            tempBodies.push(tileBody);
+          }
         }
       }
     }
@@ -297,20 +305,14 @@ function updateGameArea() {
       myObstacles[i].x = myObstacles[i].x - 1;
       myObstacles[i].update();
     }
-    boxAComponent.x = boxA.position.x;
-    boxAComponent.y = boxA.position.y;
-    boxAComponent.angle = boxA.position.angle;
-    boxAComponent.update();
-    boxBComponent.x = boxB.position.x;
-    boxBComponent.y = boxB.position.y;
-    boxBComponent.angle = boxB.position.angle;
-    boxBComponent.update();
     myScore.update();
     myControlUp.update();
     myControlLeft.update();
     myControlRight.update();
     myControlDown.update();
-    myGamePiece.update();
+    myGamePiece1.update();
+    myGamePiece2.update();
+    myGamePiece3.update();
     for (i = 0; i < tempBodies.length; i += 1) {
       World.remove(engine.world, tempBodies[i]);
     }
