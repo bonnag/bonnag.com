@@ -8,19 +8,52 @@
         background-color: #f1f1f1;
     }
     </style>
+    <script src="matter.js"></script>
+    <script src="gameWorld.js"></script>
   </head>
   <body onload="startGame()">
     <script>
+
+// module aliases
+var Engine = Matter.Engine,
+    Render = Matter.Render,
+    World = Matter.World,
+    Bodies = Matter.Bodies;
+
+// create an engine
+var engine = Engine.create();
+
+
+var myGamePieceBody = Bodies.rectangle(50, 170, 16, 16);
+var boxA = Bodies.rectangle(200, 100, 40, 40);
+var boxB = Bodies.rectangle(225, 45, 40, 40);
+var ground = Bodies.rectangle(200, 305, 405, 30, { isStatic: true });
+
+// add all of the bodies to the world
+World.add(engine.world, [myGamePieceBody, boxA, boxB, ground]);
 
 var myGamePiece;
 var myObstacles = [];
 var myScore;
 var controlStates = {}; 
 var keyMap = {
+  k33: "spinAw",
+  k34: "spinCw",
   k37: "left",
   k39: "right",
   k38: "up",
   k40: "down"
+};
+var tileCodeToTileNum = {
+  "." : 1,
+  "l" : 8,
+  "m" : 4,
+  "n" : 9,
+  "q" : 3,
+  "p" : 5,
+  "u" : 7,
+  "v" : 2,
+  "w" : 6
 };
 
 function startGame() {
@@ -40,7 +73,12 @@ function startGame() {
       e.preventDefault();
     }
   });
-  myGamePiece = new component(20, 120, 32, 32, "sprite", "", "", 0, 0, 4);
+  boxAComponent = new component(0, 0, 40, 40, "rect", "yellow");
+  boxAComponent.link(boxA);
+  boxBComponent = new component(0, 0, 40, 40, "rect", "blue");
+  boxBComponent.link(boxB);
+  myGamePiece = new component(0, 0, 16, 16, "sprite", "", "", 0, 0, 2);
+  myGamePiece.link(myGamePieceBody);
   myScore = new component(10, 22, 0, 0, "text", "black", "");
   myControlUp = new component(60, 200, 40, 40, "sprite", "", "", 52, 0, 2);
   myControlLeft = new component(25, 235, 40, 40, "sprite", "", "", 10, 0, 2);
@@ -53,8 +91,8 @@ var myGameArea = {
   canvas: document.createElement("canvas"),
   touchPositions: [],
   start : function() {
-    this.canvas.width = 620;
-    this.canvas.height = 300;
+    this.canvas.width = 624;
+    this.canvas.height = 304;
     this.context = this.canvas.getContext("2d");
     document.body.insertBefore(this.canvas, document.getElementById("gameAreaHolder"));
     this.frameNo = 0;
@@ -112,88 +150,124 @@ var myGameArea = {
 }
 
 function component(x, y, width, height, type, color, text, spriteX, spriteY, spriteScale) {
-    this.x = x;
-    this.y = y;
-    this.width = width;
-    this.height = height;
-    this.type = type;
-    this.speedX = 0;
-    this.speedY = 0;
-    this.text = text;
-    this.color = color;
-    this.spriteX = spriteX;
-    this.spriteY = spriteY;
-    this.update = function() {
-      ctx = myGameArea.context;
-      if (this.type == "text") {
-          ctx.font = "20px Consolas";
-          ctx.fillStyle = this.color;
-          ctx.fillText(this.text, this.x, this.y);
-      } else if (this.type == "sprite") {
-        var img = document.getElementById("sprites");
-        ctx.drawImage(img,this.spriteX,this.spriteY,this.width/spriteScale,this.height/spriteScale,this.x-this.width/2,this.y-this.height/2,this.width,this.height);
-      } else {
-          ctx.fillStyle = color;
-          ctx.fillRect(this.x-this.width/2, this.y-this.height/2, this.width, this.height);
-      }
-    };
-    this.newPos = function() {
-      this.x += this.speedX;
-      this.y += this.speedY;        
-    };
-    this.isClicked = function() {
-      for (var i = 0; i < myGameArea.touchPositions.length; i++) {
-        var touchPosition = myGameArea.touchPositions[i];
-        var touching = this.crashWith({
-          x: touchPosition.x,
-          y: touchPosition.y,
-          width: 0.5,
-          height: 0.5,
-        });
-        if (touching) return true;
-      }
-      return false;
-    };
-    this.crashWith = function(otherobj) {
-      var myleft = this.x - this.width/2;
-      var myright = this.x + this.width/2;
-      var mytop = this.y - this.height/2;
-      var mybottom = this.y + this.height/2
-      var otherleft = otherobj.x - otherobj.width/2;
-      var otherright = otherobj.x + otherobj.width/2;
-      var othertop = otherobj.y - otherobj.height/2;
-      var otherbottom = otherobj.y + otherobj.height/2;
-      var crash = true;
-      if ((mybottom < othertop) || (mytop > otherbottom) || (myright < otherleft) || (myleft > otherright)) {
-          crash = false;
-      }
-      return crash;
-    };
+  this.body = null;
+  this.x = x;
+  this.y = y;
+  this.angle = 0;
+  this.width = width;
+  this.height = height;
+  this.type = type;
+  this.text = text;
+  this.color = color;
+  this.spriteX = spriteX;
+  this.spriteY = spriteY;
+  this.update = function() {
+    if (this.body) {
+      this.x = this.body.position.x;
+      this.y = this.body.position.y;
+      this.angle = this.body.angle;
+    }
+    ctx = myGameArea.context;
+    if (this.type == "text") {
+        ctx.font = "20px Consolas";
+        ctx.fillStyle = this.color;
+        ctx.fillText(this.text, this.x, this.y);
+    } else if (this.type == "sprite") {
+      var img = document.getElementById("sprites");
+      ctx.save();
+      ctx.translate(this.x,this.y);
+      ctx.rotate(this.angle);
+      ctx.drawImage(img,this.spriteX,this.spriteY,this.width/spriteScale,this.height/spriteScale,-this.width/2,-this.height/2,this.width,this.height);
+      ctx.restore();
+    } else {
+      ctx.save();
+      ctx.fillStyle = color;
+      ctx.translate(this.x,this.y);
+      ctx.rotate(this.angle);
+      ctx.fillRect(-this.width/2, -this.height/2, this.width, this.height);
+      ctx.restore();
+    }
+  };
+  this.link = function(body) {
+    this.body = body;
+  };
+  this.isClicked = function() {
+    for (var i = 0; i < myGameArea.touchPositions.length; i++) {
+      var touchPosition = myGameArea.touchPositions[i];
+      var touching = this.crashWith({
+        x: touchPosition.x,
+        y: touchPosition.y,
+        width: 0.5,
+        height: 0.5,
+      });
+      if (touching) return true;
+    }
+    return false;
+  };
+  this.crashWith = function(otherobj) {
+    var myleft = this.x - this.width/2;
+    var myright = this.x + this.width/2;
+    var mytop = this.y - this.height/2;
+    var mybottom = this.y + this.height/2
+    var otherleft = otherobj.x - otherobj.width/2;
+    var otherright = otherobj.x + otherobj.width/2;
+    var othertop = otherobj.y - otherobj.height/2;
+    var otherbottom = otherobj.y + otherobj.height/2;
+    var crash = true;
+    if ((mybottom < othertop) || (mytop > otherbottom) || (myright < otherleft) || (myleft > otherright)) {
+        crash = false;
+    }
+    return crash;
+  };
 }
 
 function updateGameArea() {
-    var x, height, gap, minHeight, maxHeight, minGap, maxGap;
+    var i, x, height, gap, minHeight, maxHeight, minGap, maxGap;
     for (i = 0; i < myObstacles.length; i += 1) {
         if (myGamePiece.crashWith(myObstacles[i])) {
-            myGameArea.stop();
-            return;
+            //myGameArea.stop();
+            //return;
         } 
     }
     myGameArea.clear();
     myGameArea.frameNo += 1;
-    myGamePiece.speedX = 0;
-    myGamePiece.speedY = 0;
-    if (controlStates["left"] || myControlLeft.isClicked()) {myGamePiece.speedX = -1; }
-    if (controlStates["right"] || myControlRight.isClicked()) {myGamePiece.speedX = 1; }
-    if (controlStates["up"] || myControlUp.isClicked()) {myGamePiece.speedY = -1; }
-    if (controlStates["down"] || myControlDown.isClicked()) {myGamePiece.speedY = 1; }
+    var maxControlVelocity = 2.0;
+    var maxControlForceMagnitude = 0.005;
+    var controlForceX = 0.0;
+    var controlForceY = 0.0;
+    var controlForceT = 0.0;
+    if (controlStates["left"] || myControlLeft.isClicked()) { controlForceX = -maxControlForceMagnitude; }
+    if (controlStates["right"] || myControlRight.isClicked()) { controlForceX = maxControlForceMagnitude; }
+    if (controlStates["up"] || myControlUp.isClicked()) { controlForceY = -maxControlForceMagnitude; }
+    if (controlStates["down"] || myControlDown.isClicked()) { controlForceY = maxControlForceMagnitude; }
+    if (controlStates["spinAw"]) {
+      controlForceT = -maxControlForceMagnitude;
+    }
+    if (controlStates["spinCw"]) { 
+      controlForceT = maxControlForceMagnitude;
+    }
+    if (myGamePieceBody.velocity.y < -maxControlVelocity) {
+      controlForceY = Math.max(0.0, controlForceY);
+    }
+    if (myGamePieceBody.velocity.y > maxControlVelocity) {
+      controlForceY = Math.min(0.0, controlForceY);
+    }
+    if (myGamePieceBody.velocity.x < -maxControlVelocity) {
+      controlForceX = Math.max(0.0, controlForceX);
+    }
+    if (myGamePieceBody.velocity.x > maxControlVelocity) {
+      controlForceX = Math.min(0.0, controlForceX);
+    }
+    Matter.Body.applyForce(myGamePieceBody, myGamePieceBody.position, {x:controlForceX, y:controlForceY});
+    Matter.Body.applyForce(myGamePieceBody, {x:myGamePieceBody.position.x - 10, y:myGamePieceBody.position.y}, {x:0.0, y:-controlForceT});
+    Matter.Body.applyForce(myGamePieceBody, {x:myGamePieceBody.position.x + 10, y:myGamePieceBody.position.y}, {x:0.0, y:+controlForceT});
     if (myGameArea.frameNo == 1 || everyinterval(150)) {
         x = myGameArea.canvas.width;
         y = myGameArea.canvas.height;
         minHeight = 20;
-        maxHeight = 200;
+        maxHeight = 180;
         height = Math.floor(Math.random()*(maxHeight-minHeight+1)+minHeight);
-        minGap = 50;
+        minGap = 70;
         maxGap = 200;
         gap = Math.floor(Math.random()*(maxGap-minGap+1)+minGap);
         var remaining = y - height - gap;
@@ -202,19 +276,44 @@ function updateGameArea() {
             myObstacles.push(new component(x, y - remaining/2, 10, remaining, "rect", "green"));
         }
     }
-    for (i = 0; i < myObstacles.length; i += 1) {
-        myObstacles[i].speedX = -1;
-        myObstacles[i].newPos();
-        myObstacles[i].update();
-    }
     myScore.text="SCORE: " + myGameArea.frameNo;
+    var tempBodies = [];
+    for (var row = 0; row < 19; row++) {
+      for (var col = 0; col < 39; col++) {
+        var tileCode = myGameWorld[row][col];
+        var tileNum = tileCodeToTileNum[tileCode];
+        if (!tileNum) continue;
+        var tileComp = new component(col * 16 + 8, row * 16 + 8, 16, 16, "sprite", "", "", (tileNum-1)*9, 26, 2);
+        tileComp.update();
+        if (tileCode == '.' || tileCode == 'p' || tileCode == 'q' || tileCode == 'v' || tileCode == 'm') {
+          var tileBody = Bodies.rectangle(col * 16 + 8, row * 16 + 8, 16, 16, { isStatic: true });
+          tempBodies.push(tileBody);
+        }
+      }
+    }
+    World.add(engine.world, tempBodies);
+    Engine.update(engine);
+    for (i = 0; i < myObstacles.length; i += 1) {
+      myObstacles[i].x = myObstacles[i].x - 1;
+      myObstacles[i].update();
+    }
+    boxAComponent.x = boxA.position.x;
+    boxAComponent.y = boxA.position.y;
+    boxAComponent.angle = boxA.position.angle;
+    boxAComponent.update();
+    boxBComponent.x = boxB.position.x;
+    boxBComponent.y = boxB.position.y;
+    boxBComponent.angle = boxB.position.angle;
+    boxBComponent.update();
     myScore.update();
     myControlUp.update();
     myControlLeft.update();
     myControlRight.update();
     myControlDown.update();
-    myGamePiece.newPos();
     myGamePiece.update();
+    for (i = 0; i < tempBodies.length; i += 1) {
+      World.remove(engine.world, tempBodies[i]);
+    }
 }
 
 function everyinterval(n) {
