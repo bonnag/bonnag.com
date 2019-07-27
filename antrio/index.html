@@ -50,9 +50,8 @@ function startGame() {
 }
 
 var myGameArea = {
-  canvas : document.createElement("canvas"),
-  clicked: false,
-  lastClickPos: {x: 0, y: 0},
+  canvas: document.createElement("canvas"),
+  touchPositions: [],
   start : function() {
     this.canvas.width = 620;
     this.canvas.height = 300;
@@ -62,30 +61,39 @@ var myGameArea = {
     this.interval = setInterval(updateGameArea, 20);
     var self = this;
     this.canvas.addEventListener("mousedown", function (e) {
-        self.clicked = true;
-        self.lastClickPos = self.getMousePos(e);
-        e.preventDefault();
+      self.touchPositions = [ self.getPointerPos(e) ];
+      e.preventDefault();
     }, false);
     this.canvas.addEventListener("mouseup", function (e) {
-        self.clicked = false;
-        e.preventDefault();
+      self.touchPositions = [];
+      e.preventDefault();
     }, false);
     this.canvas.addEventListener("mousemove", function (e) {
-        self.lastClickPos = self.getMousePos(e);
-        e.preventDefault();
+      if (e.buttons > 0) {
+        self.touchPositions = [ self.getPointerPos(e) ];
+      }
+      e.preventDefault();
     }, false);
     this.canvas.addEventListener("touchstart", function (e) {
-        self.clicked = true;
-        self.lastClickPos = self.getMousePos(e.touches[0]);
-        e.preventDefault();
+      self.touchPositions = [];
+      for (var i = 0; i < e.targetTouches.length; i++) {
+        self.touchPositions.push(self.getPointerPos(e.targetTouches[i]));
+      }
+      e.preventDefault();
     }, false);
     this.canvas.addEventListener("touchend", function (e) {
-        self.clicked = false;
-        e.preventDefault();
+      self.touchPositions = [];
+      for (var i = 0; i < e.targetTouches.length; i++) {
+        self.touchPositions.push(self.getPointerPos(e.targetTouches[i]));
+      }
+      e.preventDefault();
     }, false);
     this.canvas.addEventListener("touchmove", function (e) {
-        self.lastClickPos = self.getMousePos(e.touches[0]);
-        e.preventDefault();
+      self.touchPositions = [];
+      for (var i = 0; i < e.targetTouches.length; i++) {
+        self.touchPositions.push(self.getPointerPos(e.targetTouches[i]));
+      }
+      e.preventDefault();
     }, false);
   },
   clear : function() {
@@ -94,11 +102,11 @@ var myGameArea = {
   stop : function() {
       clearInterval(this.interval);
   },
-  getMousePos : function(mouseEvent) {
+  getPointerPos : function(pointerEvent) {
     var rect = this.canvas.getBoundingClientRect();
     return {
-        x: mouseEvent.clientX - rect.left,
-        y: mouseEvent.clientY - rect.top
+        x: pointerEvent.clientX - rect.left,
+        y: pointerEvent.clientY - rect.top
     };
   }
 }
@@ -134,13 +142,17 @@ function component(x, y, width, height, type, color, text, spriteX, spriteY, spr
       this.y += this.speedY;        
     };
     this.isClicked = function() {
-      if (!myGameArea.clicked) return false;
-      return this.crashWith({
-          x: myGameArea.lastClickPos.x,
-          y: myGameArea.lastClickPos.y,
+      for (var i = 0; i < myGameArea.touchPositions.length; i++) {
+        var touchPosition = myGameArea.touchPositions[i];
+        var touching = this.crashWith({
+          x: touchPosition.x,
+          y: touchPosition.y,
           width: 0.5,
           height: 0.5,
-      });
+        });
+        if (touching) return true;
+      }
+      return false;
     };
     this.crashWith = function(otherobj) {
       var myleft = this.x - this.width/2;
