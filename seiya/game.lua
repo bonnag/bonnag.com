@@ -28,7 +28,8 @@ weapon = {
 }
 mapx=0
 mapy=0
-mode = "play"
+mode = "start"
+modeEnteredTime = 0
 enemies = {}
 room = {
 	x = 0,
@@ -50,6 +51,11 @@ spriteByName = {
 }
 enemiesByRoomKey = {}
 
+function changeMode(newMode)
+    mode = newMode
+    modeEnteredTime = timeNow
+end
+
 function readMovementKeys()
 	player.vx=0
 	player.vy=0
@@ -57,7 +63,7 @@ function readMovementKeys()
 	if btn(1) then player.vy = 1 end
 	if btn(2) then player.vx = -1 end
 	if btn(3) then player.vx = 1 end
-	if btn(5) then
+	if btn(4) or btn(5) then
 		throwWeapon()
 	end
 end
@@ -138,7 +144,7 @@ function hitBaby()
 	swapAllInRoom(spriteByName.baby, spriteByName.empty)
 	player.babies = player.babies + 1
 	if player.babies == 3 then
-		mode = "completed"
+		changeMode("completed")
 	end
 end
 
@@ -157,7 +163,7 @@ function ow(hurts)
 	player.health = player.health - hurts
 	if player.health <= 0 then
 		sfx(1, 10, 100)
-		mode = "gameover"
+		changeMode("gameover")
 	end
 end
 
@@ -209,8 +215,8 @@ function moveEnemies()
 				if countEnemies() < 10 then
 					if onceEverySeconds(2) then
 						table.insert(enemies, {
-							x=enemy.x,
-							y=enemy.y,
+							x=enemy.x + 4 * enemy.size,
+							y=enemy.y + 4 * enemy.size,
 							vx=math.cos(timeNow * 0.01),
 							vy=math.sin(timeNow * 0.01),
 							sn=64,
@@ -324,14 +330,36 @@ function drawHud()
 end
 
 function drawGameOver()
-	print("Game Over", 100, 40)
-	spr(spriteByName.sadFace, 110, 60, -1, 2, 0, 0, 2, 2)
+	print("Game Over", 90, 40)
+	spr(spriteByName.sadFace, 100, 60, -1, 2, 0, 0, 2, 2)
+  if timeNow - modeEnteredTime > 120 then
+    print("Press Z to Start Again", 70, 120)
+    if btn(4) or btn(5) then
+      reset()
+    end
+  end
 end
 
 function drawCompleted()
-	print("You Won", 100, 40)
+	print("You Won", 90, 40)
 	print("Score: " .. player.score, 80, 60)
-	spr(spriteByName.happyFace, 105, 80, -1, 2, 0, 0, 2, 2)
+	spr(spriteByName.happyFace, 100, 80, -1, 2, 0, 0, 2, 2)
+  if timeNow - modeEnteredTime > 120 then
+    print("Press Z to Start Again", 70, 120)
+    if btn(4) or btn(5) then
+      reset()
+    end
+  end
+end
+
+function drawStart()
+	print("Call of the Trees", 70, 40)
+	print("Can you help find the baby trees?", 30, 60)
+  print("Press Z to Start", 70, 80)
+  print("by Seiya Elby", 80, 100)
+  if btn(4) or btn(5) then
+    changeMode("play")
+  end
 end
 
 function enterRoom()
@@ -387,16 +415,18 @@ function findEnemies()
 	end
 end
 
-function initLevel()
+function init()
 	timeNow=0
-	sfx(1, 40, 20)
 	findEnemies()
 	enterRoom()
 end
 
-initLevel()
+init()
 function TIC()
 	cls(13)
+	if mode == "start" then
+		drawStart()
+	end
 	if mode == "gameover" then
 		drawGameOver()
 	end
