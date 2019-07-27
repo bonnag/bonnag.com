@@ -1,16 +1,17 @@
 <!DOCTYPE html>
 <html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<style>
-canvas {
-    border:1px solid #d3d3d3;
-    background-color: #f1f1f1;
-}
-</style>
-</head>
-<body onload="startGame()">
-<script>
+  <head>
+    <meta name="viewport" content="width=640, height=400"/>
+    <style>
+    canvas {
+        border:1px solid #d3d3d3;
+        background-color: #f1f1f1;
+    }
+    </style>
+  </head>
+  <body onload="startGame()">
+    <script>
+
 var myGamePiece;
 var myObstacles = [];
 var myScore;
@@ -29,75 +30,133 @@ function startGame() {
     var control = keyMap[inputCode];
     if (control) {
       controlStates[control] = true;
+      e.preventDefault();
     }
   });
   window.addEventListener("keyup", function (e) {
     var control = keyMap["k" + e.keyCode];
     if (control) {
       controlStates[control] = false;
+      e.preventDefault();
     }
   });
-  myGamePiece = new component(30, 30, "red", 10, 120);
-  myScore = new component("30px", "Consolas", "black", 280, 40, "text");
+  myGamePiece = new component(20, 120, 32, 32, "sprite", "", "", 0, 0, 4);
+  myScore = new component(10, 22, 0, 0, "text", "black", "");
+  myControlUp = new component(60, 200, 40, 40, "sprite", "", "", 52, 0, 2);
+  myControlLeft = new component(25, 235, 40, 40, "sprite", "", "", 10, 0, 2);
+  myControlRight = new component(95, 235, 40, 40, "sprite", "", "", 31, 0, 2);
+  myControlDown = new component(60, 270, 40, 40, "sprite", "", "", 74, 0, 2);
   myGameArea.start();
 }
 
 var myGameArea = {
   canvas : document.createElement("canvas"),
+  clicked: false,
+  lastClickPos: {x: 0, y: 0},
   start : function() {
-      this.canvas.width = 640;
-      this.canvas.height = 300;
-      this.context = this.canvas.getContext("2d");
-      document.body.insertBefore(this.canvas, document.getElementById("gameAreaHolder"));
-      this.frameNo = 0;
-      this.interval = setInterval(updateGameArea, 20);
+    this.canvas.width = 620;
+    this.canvas.height = 300;
+    this.context = this.canvas.getContext("2d");
+    document.body.insertBefore(this.canvas, document.getElementById("gameAreaHolder"));
+    this.frameNo = 0;
+    this.interval = setInterval(updateGameArea, 20);
+    var self = this;
+    this.canvas.addEventListener("mousedown", function (e) {
+        self.clicked = true;
+        self.lastClickPos = self.getMousePos(e);
+        e.preventDefault();
+    }, false);
+    this.canvas.addEventListener("mouseup", function (e) {
+        self.clicked = false;
+        e.preventDefault();
+    }, false);
+    this.canvas.addEventListener("mousemove", function (e) {
+        self.lastClickPos = self.getMousePos(e);
+        e.preventDefault();
+    }, false);
+    this.canvas.addEventListener("touchstart", function (e) {
+        self.clicked = true;
+        self.lastClickPos = self.getMousePos(e.touches[0]);
+        e.preventDefault();
+    }, false);
+    this.canvas.addEventListener("touchend", function (e) {
+        self.clicked = false;
+        e.preventDefault();
+    }, false);
+    this.canvas.addEventListener("touchmove", function (e) {
+        self.lastClickPos = self.getMousePos(e.touches[0]);
+        e.preventDefault();
+    }, false);
   },
   clear : function() {
       this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
   },
   stop : function() {
       clearInterval(this.interval);
+  },
+  getMousePos : function(mouseEvent) {
+    var rect = this.canvas.getBoundingClientRect();
+    return {
+        x: mouseEvent.clientX - rect.left,
+        y: mouseEvent.clientY - rect.top
+    };
   }
 }
 
-function component(width, height, color, x, y, type) {
-    this.type = type;
+function component(x, y, width, height, type, color, text, spriteX, spriteY, spriteScale) {
+    this.x = x;
+    this.y = y;
     this.width = width;
     this.height = height;
+    this.type = type;
     this.speedX = 0;
-    this.speedY = 0;    
-    this.x = x;
-    this.y = y;    
+    this.speedY = 0;
+    this.text = text;
+    this.color = color;
+    this.spriteX = spriteX;
+    this.spriteY = spriteY;
     this.update = function() {
-        ctx = myGameArea.context;
-        if (this.type == "text") {
-            ctx.font = this.width + " " + this.height;
-            ctx.fillStyle = color;
-            ctx.fillText(this.text, this.x, this.y);
-        } else {
-            ctx.fillStyle = color;
-            ctx.fillRect(this.x, this.y, this.width, this.height);
-        }
-    }
+      ctx = myGameArea.context;
+      if (this.type == "text") {
+          ctx.font = "20px Consolas";
+          ctx.fillStyle = this.color;
+          ctx.fillText(this.text, this.x, this.y);
+      } else if (this.type == "sprite") {
+        var img = document.getElementById("sprites");
+        ctx.drawImage(img,this.spriteX,this.spriteY,this.width/spriteScale,this.height/spriteScale,this.x-this.width/2,this.y-this.height/2,this.width,this.height);
+      } else {
+          ctx.fillStyle = color;
+          ctx.fillRect(this.x-this.width/2, this.y-this.height/2, this.width, this.height);
+      }
+    };
     this.newPos = function() {
-        this.x += this.speedX;
-        this.y += this.speedY;        
-    }
+      this.x += this.speedX;
+      this.y += this.speedY;        
+    };
+    this.isClicked = function() {
+      if (!myGameArea.clicked) return false;
+      return this.crashWith({
+          x: myGameArea.lastClickPos.x,
+          y: myGameArea.lastClickPos.y,
+          width: 0.5,
+          height: 0.5,
+      });
+    };
     this.crashWith = function(otherobj) {
-        var myleft = this.x;
-        var myright = this.x + (this.width);
-        var mytop = this.y;
-        var mybottom = this.y + (this.height);
-        var otherleft = otherobj.x;
-        var otherright = otherobj.x + (otherobj.width);
-        var othertop = otherobj.y;
-        var otherbottom = otherobj.y + (otherobj.height);
-        var crash = true;
-        if ((mybottom < othertop) || (mytop > otherbottom) || (myright < otherleft) || (myleft > otherright)) {
-            crash = false;
-        }
-        return crash;
-    }
+      var myleft = this.x - this.width/2;
+      var myright = this.x + this.width/2;
+      var mytop = this.y - this.height/2;
+      var mybottom = this.y + this.height/2
+      var otherleft = otherobj.x - otherobj.width/2;
+      var otherright = otherobj.x + otherobj.width/2;
+      var othertop = otherobj.y - otherobj.height/2;
+      var otherbottom = otherobj.y + otherobj.height/2;
+      var crash = true;
+      if ((mybottom < othertop) || (mytop > otherbottom) || (myright < otherleft) || (myleft > otherright)) {
+          crash = false;
+      }
+      return crash;
+    };
 }
 
 function updateGameArea() {
@@ -112,20 +171,24 @@ function updateGameArea() {
     myGameArea.frameNo += 1;
     myGamePiece.speedX = 0;
     myGamePiece.speedY = 0;
-    if (controlStates["left"]) {myGamePiece.speedX = -1; }
-    if (controlStates["right"]) {myGamePiece.speedX = 1; }
-    if (controlStates["up"]) {myGamePiece.speedY = -1; }
-    if (controlStates["down"]) {myGamePiece.speedY = 1; }
+    if (controlStates["left"] || myControlLeft.isClicked()) {myGamePiece.speedX = -1; }
+    if (controlStates["right"] || myControlRight.isClicked()) {myGamePiece.speedX = 1; }
+    if (controlStates["up"] || myControlUp.isClicked()) {myGamePiece.speedY = -1; }
+    if (controlStates["down"] || myControlDown.isClicked()) {myGamePiece.speedY = 1; }
     if (myGameArea.frameNo == 1 || everyinterval(150)) {
         x = myGameArea.canvas.width;
+        y = myGameArea.canvas.height;
         minHeight = 20;
         maxHeight = 200;
         height = Math.floor(Math.random()*(maxHeight-minHeight+1)+minHeight);
         minGap = 50;
         maxGap = 200;
         gap = Math.floor(Math.random()*(maxGap-minGap+1)+minGap);
-        myObstacles.push(new component(10, height, "green", x, 0));
-        myObstacles.push(new component(10, x - height - gap, "green", x, height + gap));
+        var remaining = y - height - gap;
+        myObstacles.push(new component(x, height/2, 10, height, "rect", "green"));
+        if (remaining > 0) {
+            myObstacles.push(new component(x, y - remaining/2, 10, remaining, "rect", "green"));
+        }
     }
     for (i = 0; i < myObstacles.length; i += 1) {
         myObstacles[i].speedX = -1;
@@ -134,7 +197,11 @@ function updateGameArea() {
     }
     myScore.text="SCORE: " + myGameArea.frameNo;
     myScore.update();
-    myGamePiece.newPos();    
+    myControlUp.update();
+    myControlLeft.update();
+    myControlRight.update();
+    myControlDown.update();
+    myGamePiece.newPos();
     myGamePiece.update();
 }
 
@@ -142,25 +209,10 @@ function everyinterval(n) {
     if ((myGameArea.frameNo / n) % 1 == 0) {return true;}
     return false;
 }
-
-function startPress(control) {
-  controlStates[control] = true;
-}
-
-function clearPress(control) {
-  controlStates[control] = false;
-}
-
-</script>
-<h2>antr.io version 0.0001</h2>
-<div id="gameAreaHolder"></div>
-<div style="text-align:center;width:480px;">
-  <button onmousedown="startPress('up')" onmouseup="clearPress('up')" ontouchstart="startPress('up')">UP</button><br><br>
-  <button onmousedown="startPress('left')" onmouseup="clearPress('left')" ontouchstart="startPress('left')">LEFT</button>
-  <button onmousedown="startPress('right')" onmouseup="clearPress('right')" ontouchstart="startPress('right')">RIGHT</button><br><br>
-  <button onmousedown="startPress('down')" onmouseup="clearPress('down')" ontouchstart="startPress('down')">DOWN</button>
-</div>
-
-<p>The score will count one point for each frame you manage to "stay alive".</p>
-</body>
+    </script>
+    <h2>antr.io version 0.0001</h2>
+    <div id="gameAreaHolder"></div>
+    <p>The score will count one point for each frame you manage to "stay alive".</p>
+    <img id="sprites" src="sprites.png">
+  </body>
 </html>
