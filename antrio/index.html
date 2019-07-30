@@ -81,10 +81,10 @@ function startGame() {
   myGamePiece3 = new component(0, 0, 16, 16, "sprite", "", "", 0, 0, 2);
   myGamePiece3.link(myGamePieceBody3);
   myScore = new component(10, 22, 0, 0, "text", "black", "");
-  myControlUp = new component(60, 200, 40, 40, "sprite", "", "", 52, 0, 2);
-  myControlLeft = new component(25, 235, 40, 40, "sprite", "", "", 10, 0, 2);
-  myControlRight = new component(95, 235, 40, 40, "sprite", "", "", 31, 0, 2);
-  myControlDown = new component(60, 270, 40, 40, "sprite", "", "", 74, 0, 2);
+  myControlUp = new component(60, 200, 42, 42, "sprite", "", "", 52, 0, 2);
+  myControlLeft = new component(25, 235, 42, 44, "sprite", "", "", 10, 0, 2);
+  myControlRight = new component(95, 235, 42, 44, "sprite", "", "", 31, 0, 2);
+  myControlDown = new component(60, 270, 42, 42, "sprite", "", "", 74, 0, 2);
   myGameArea.start();
 }
 
@@ -176,6 +176,7 @@ function component(x, y, width, height, type, color, text, spriteX, spriteY, spr
     } else if (this.type == "sprite") {
       var img = document.getElementById("sprites");
       ctx.save();
+      ctx.imageSmoothingEnabled = false;
       ctx.translate(this.x,this.y);
       ctx.rotate(this.angle);
       ctx.drawImage(img,this.spriteX,this.spriteY,this.width/spriteScale,this.height/spriteScale,-this.width/2,-this.height/2,this.width,this.height);
