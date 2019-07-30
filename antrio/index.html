@@ -30,7 +30,7 @@ var myGamePieceBody = Matter.Composite.create();
 Matter.Composite.add(myGamePieceBody, myGamePieceBody1);
 Matter.Composite.add(myGamePieceBody, myGamePieceBody2);
 Matter.Composite.add(myGamePieceBody, myGamePieceBody3);
-Matter.Composites.chain(myGamePieceBody, 0, 0, -0, 0, { stiffness: 0.1, length: 16 });
+Matter.Composites.chain(myGamePieceBody, 0, 0, -0, 0, { stiffness: 0.1, length: 20 });
 World.add(engine.world, [myGamePieceBody]);
 
 var myGamePiece;
@@ -306,16 +306,16 @@ function updateGameArea() {
       myObstacles[i].update();
     }
     myScore.update();
-    myControlUp.update();
-    myControlLeft.update();
-    myControlRight.update();
-    myControlDown.update();
     myGamePiece1.update();
     myGamePiece2.update();
     myGamePiece3.update();
     for (i = 0; i < tempBodies.length; i += 1) {
       World.remove(engine.world, tempBodies[i]);
     }
+    myControlUp.update();
+    myControlLeft.update();
+    myControlRight.update();
+    myControlDown.update();
 }
 
 function everyinterval(n) {
