@@ -1,5 +1,7 @@
 import Matter from 'matter-js';
+import RoomStore from './room-store.js';
 
+var roomStore = new RoomStore();
 var currentRoom = null;
 var editMode = false;
 
@@ -30,8 +32,6 @@ World.add(engine.world, [myGamePieceBody]);
 var topBarSize = 28;
 var bottomBarSize = 28;
 var tileSize = 16;
-var numCols = 42;
-var numRows = 20;
 
 var myGamePiece1 = undefined;
 var myGamePiece2 = undefined;
@@ -64,21 +64,8 @@ var tileCodeToTileNum = {
   "w" : 7
 };
 
-function changeRoom(roomNumber) {
-  currentRoom = null;
-  var xhr = new XMLHttpRequest();
-  xhr.open('GET', 'https://antr.io/rooms/' + roomNumber);
-  xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.onload = function() {
-    if (xhr.status === 200) {
-      currentRoom = JSON.parse(xhr.responseText);
-    }
-  };
-  xhr.send();
-}
-
 function startGame() {
-  changeRoom(5050);
+  roomStore.changeRoom(5050);
   window.addEventListener("keydown", function (e) {
     myGameArea.keys = (myGameArea.keys || []);
     var inputCode = ["k" + e.keyCode];
@@ -120,8 +107,8 @@ var myGameArea = {
   mousePosition: null,
   render: null,
   start : function() {
-    this.canvas.width = numCols * tileSize;
-    this.canvas.height = topBarSize + numRows * tileSize + bottomBarSize;
+    this.canvas.width = roomStore.numCols * tileSize;
+    this.canvas.height = topBarSize + roomStore.numRows * tileSize + bottomBarSize;
     this.context = this.canvas.getContext("2d");
     document.body.insertBefore(this.canvas, document.getElementById("gameAreaHolder"));
 
@@ -287,9 +274,9 @@ function component(x, y, width, height, type, color, text, spriteX, spriteY, spr
 }
 
 function drawTiles() {
-  for (var row = 0; row < numRows; row++) {
-    for (var col = 0; col < numCols; col++) {
-      var tileCode = currentRoom.tileCodeRows[row][col];
+  for (var row = 0; row < roomStore.numRows; row++) {
+    for (var col = 0; col < roomStore.numCols; col++) {
+      var tileCode = roomStore.getTileCode(row, col);
       var tileNum = tileCodeToTileNum[tileCode];
       if (!tileNum) tileNum = 1;
       var tx = col * tileSize + tileSize/2;
@@ -329,8 +316,8 @@ function drawChosenTile() {
     var y = myGameArea.mousePosition.y - topBarSize;
     var row = Math.floor(y / tileSize);
     var col = Math.floor(x / tileSize);
-    if (row <= 0 || row >= numRows - 1) return;
-    if (col <= 0 || col >= numCols - 1) return;
+    if (row <= 0 || row >= roomStore.numRows - 1) return;
+    if (col <= 0 || col >= roomStore.numCols - 1) return;
     var tx = col * tileSize + tileSize/2;
     var ty = topBarSize + row * tileSize + tileSize/2;
     var tileNum = tileCodeToTileNum[tileChooserCurrentCode];
@@ -338,8 +325,7 @@ function drawChosenTile() {
     var tileBorder = new component(tx, ty, 20, 20, "rect", tileBorderColour);
     tileBorder.update();
     if (tileBorder.isClicked()) {
-      // TODO - queue up for sending to server
-      currentRoom.tileCodeRows[row] = replaceCharInStr(currentRoom.tileCodeRows[row], col, tileChooserCurrentCode);
+      roomStore.editTileCode(row, col, tileChooserCurrentCode);
     }
     var tileComp = new component(tx, ty, 16, 16, "sprite", "", "", (tileNum-1)*9, 26, 2.5);
     tileComp.update();
@@ -350,7 +336,7 @@ function updateGameArea() {
 
     myGameArea.clear();
 
-    if (currentRoom == null) {
+    if (!roomStore.isLoaded) {
       myScore.text = "Loading ...";
       myScore.update();
       return;
@@ -396,12 +382,12 @@ function updateGameArea() {
     Matter.Body.applyForce(myGamePieceBody3, myGamePieceBody3.position, {x:controlForceX, y:controlForceY});
     Matter.Body.applyForce(myGamePieceBody1, {x:myGamePieceBody1.position.x - 10, y:myGamePieceBody1.position.y}, {x:0.0, y:-controlForceT});
     Matter.Body.applyForce(myGamePieceBody1, {x:myGamePieceBody1.position.x + 10, y:myGamePieceBody1.position.y}, {x:0.0, y:+controlForceT});
-    myScore.text="SCORE: " + myGameArea.frameNo;
+    myScore.text = roomStore.roomName;
     drawTiles();
     var tempBodies = [];
-    for (var row = 0; row < numRows; row++) {
-      for (var col = 0; col < numCols; col++) {
-        var tileCode = currentRoom.tileCodeRows[row][col];
+    for (var row = 0; row < roomStore.numRows; row++) {
+      for (var col = 0; col < roomStore.numCols; col++) {
+        var tileCode = roomStore.getTileCode(row, col);
         var tileNum = tileCodeToTileNum[tileCode];
         if (!tileNum) continue;
         var tx = col * tileSize + tileSize/2;

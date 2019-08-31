@@ -6,7 +6,8 @@
   "scripts": {
     "test": "jest",
     "build": "parcel build index.html",
-    "dev": "parcel index.html"
+    "dev": "parcel index.html",
+    "lint": "./node_modules/.bin/eslint src"
   },
   "author": "",
   "license": "UNLICENSED",
@@ -14,6 +15,7 @@
     "matter-js": "^0.14.2"
   },
   "devDependencies": {
+    "eslint": "^6.3.0",
     "jest": "^24.9.0",
     "parcel-bundler": "^1.12.3"
   }
