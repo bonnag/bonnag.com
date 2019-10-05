@@ -4,19 +4,24 @@
   "description": "antr.io game front-end",
   "main": "index.js",
   "scripts": {
-    "test": "jest",
+    "test": "ava",
     "build": "parcel build index.html",
     "dev": "parcel index.html",
     "lint": "./node_modules/.bin/eslint src"
   },
+  "ava": {
+  },
+  "browserslist": [
+    "since 2017-06"
+  ],
   "author": "",
   "license": "UNLICENSED",
   "dependencies": {
     "matter-js": "^0.14.2"
   },
   "devDependencies": {
+    "ava": "^2.4.0",
     "eslint": "^6.3.0",
-    "jest": "^24.9.0",
     "parcel-bundler": "^1.12.3"
   }
 }
