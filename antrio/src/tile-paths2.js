@@ -76,8 +76,7 @@ function getTilePaths(tileSettings, tileCode) {
 
 function computeMoves(currentPose, tileSettings, tileCodeProvider, motionDir, motionDistance) {
   const [tileCoords, tileRelativePos, tileOriginPos] = quantize(tileSettings, currentPose.pos);
-  const moves = computeMovesR(currentPose, tileSettings, tileCodeProvider, tileCoords, tileRelativePos, tileOriginPos, motionDir, motionDistance, 0);
-  return makeMovesUniqueStably(moves);
+  return computeMovesR(currentPose, tileSettings, tileCodeProvider, tileCoords, tileRelativePos, tileOriginPos, motionDir, motionDistance, 0);
 }
 
 function computeMovesR(originalPose, tileSettings, tileCodeProvider, tileCoords, dubiousTileRelativePos, tileOriginPos, motionDir, motionDistance, depth) {
@@ -147,20 +146,6 @@ function computeMovesR(originalPose, tileSettings, tileCodeProvider, tileCoords,
     }
   }
   return moves;
-}
-
-function makeMovesUniqueStably(moves) {
-  const seenKeys = new Set();
-  const keepMoves = [];
-  for (let move of moves) {
-    let key = JSON.stringify(move);
-    if (seenKeys.has(key)) {
-      continue;
-    }
-    seenKeys.add(key)
-    keepMoves.push(move);
-  }
-  return keepMoves;
 }
 
 function tileMoveResultToMoveResult(tileMoveResult, tileOriginPos) {

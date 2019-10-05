@@ -101,7 +101,7 @@ const myGameArea = {
     document.body.insertBefore(this.canvas, document.getElementById("gameAreaHolder"));
 
     this.frameNo = 0;
-    this.interval = setInterval(updateGameArea, 20);
+    this.interval = setInterval(updateGameArea, 30);
     let self = this;
     this.canvas.addEventListener("mousedown", function (e) {
       self.touchPositions = [ self.getPointerPos(e) ];
@@ -321,7 +321,6 @@ function updateGameArea() {
 
     myGamePiece1.angle = directions.toRadians(currentPose.dir);
     myGamePiece1.flip = !directions.areEqual(currentPose.dir, directions.rotateClockwise(currentPose.normal, 2));
-    console.log(myGamePiece1.flip, myGamePiece1.angle / Math.PI * 180);
     const centrePos = directions.translateEuclidean(currentPose.pos, currentPose.normal, myGamePiece1.height / 2);
     myGamePiece1.x = centrePos[0];
     myGamePiece1.y = topBarSize + roomStore.numRows * tileSize - centrePos[1];

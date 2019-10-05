@@ -584,7 +584,7 @@ function snapToLine(linePointPos, lineDir, pos) {
       }
 
     default:
-      throw new Error('bad direction ' + dir);
+      throw new Error('bad direction ' + lineDir);
   }
 
   return addVec(snappedRelPos, linePointPos);
@@ -722,8 +722,7 @@ function computeMoves(currentPose, tileSettings, tileCodeProvider, motionDir, mo
         tileRelativePos = _quantize2[1],
         tileOriginPos = _quantize2[2];
 
-  const moves = computeMovesR(currentPose, tileSettings, tileCodeProvider, tileCoords, tileRelativePos, tileOriginPos, motionDir, motionDistance, 0);
-  return makeMovesUniqueStably(moves);
+  return computeMovesR(currentPose, tileSettings, tileCodeProvider, tileCoords, tileRelativePos, tileOriginPos, motionDir, motionDistance, 0);
 }
 
 function computeMovesR(originalPose, tileSettings, tileCodeProvider, tileCoords, dubiousTileRelativePos, tileOriginPos, motionDir, motionDistance, depth) {
@@ -808,24 +807,6 @@ function computeMovesR(originalPose, tileSettings, tileCodeProvider, tileCoords,
   }
 
   return moves;
-}
-
-function makeMovesUniqueStably(moves) {
-  const seenKeys = new Set();
-  const keepMoves = [];
-
-  for (let move of moves) {
-    let key = JSON.stringify(move);
-
-    if (seenKeys.has(key)) {
-      continue;
-    }
-
-    seenKeys.add(key);
-    keepMoves.push(move);
-  }
-
-  return keepMoves;
 }
 
 function tileMoveResultToMoveResult(tileMoveResult, tileOriginPos) {
@@ -1036,7 +1017,7 @@ const myGameArea = {
     this.context = this.canvas.getContext("2d");
     document.body.insertBefore(this.canvas, document.getElementById("gameAreaHolder"));
     this.frameNo = 0;
-    this.interval = setInterval(updateGameArea, 20);
+    this.interval = setInterval(updateGameArea, 30);
     let self = this;
     this.canvas.addEventListener("mousedown", function (e) {
       self.touchPositions = [self.getPointerPos(e)];
@@ -1272,7 +1253,6 @@ function updateGameArea() {
   currentPose = newPose;
   myGamePiece1.angle = directions.toRadians(currentPose.dir);
   myGamePiece1.flip = !directions.areEqual(currentPose.dir, directions.rotateClockwise(currentPose.normal, 2));
-  console.log(myGamePiece1.flip, myGamePiece1.angle / Math.PI * 180);
   const centrePos = directions.translateEuclidean(currentPose.pos, currentPose.normal, myGamePiece1.height / 2);
   myGamePiece1.x = centrePos[0];
   myGamePiece1.y = topBarSize + roomStore.numRows * tileSize - centrePos[1];
@@ -1323,7 +1303,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52505" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54879" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

@@ -258,7 +258,7 @@ function snapToLine(linePointPos, lineDir, pos) {
         snappedRelPos = [mean, -mean];
         break;
       }
-    default: throw new Error('bad direction ' + dir);
+    default: throw new Error('bad direction ' + lineDir);
   }
   return addVec(snappedRelPos, linePointPos);
 }
