@@ -1,4 +1,5 @@
 import RoomStore from './room-store.js';
+const SegmentTrain = require('./segment-train.js');
 const tilePaths = require('./tile-paths2');
 const directions = require('./directions');
 
@@ -19,6 +20,7 @@ let currentPose = {
   normal: directions.fromCardinal('N'),
 };
 let currentVelocity = 0.0;
+const segmentTrain = new SegmentTrain(currentPose);
 
 const initialVelocity = 1.0;
 const maxVelocity = 2.5;
@@ -32,6 +34,7 @@ const tileCodeProvider = {
 };
 
 let myGamePiece1 = undefined;
+let myGamePiece2 = undefined;
 let myScore = undefined;
 let myControlUp = undefined;
 let myControlLeft = undefined;
@@ -81,7 +84,8 @@ function startGame() {
       e.preventDefault();
     }
   });
-  myGamePiece1 = new component(160, 257, 16, 16, "sprite", "", "", 0, 16, 2);
+  myGamePiece1 = new component(0, 0, 16, 18, "sprite", "", "", 1, 50, 1);
+  myGamePiece2 = new component(0, 0, 10, 18, "sprite", "", "", 21, 50, 1); // we fiddle with spriteX later
   myScore = new component(16, 14, 0, 0, "text", "black", "");
   myControlUp = new component(60, 240, 42, 42, "sprite", "", "", 52, 0, 2);
   myControlLeft = new component(25, 275, 42, 44, "sprite", "", "", 10, 0, 2);
@@ -233,7 +237,7 @@ function drawTiles() {
       if (!tileNum) tileNum = 1;
       var tx = col * tileSize + tileSize/2;
       var ty = topBarSize + row * tileSize + tileSize/2;
-      var tileComp = new component(tx, ty, 16, 16, "sprite", "", "", (tileNum-1)*9, 26, 2);
+      var tileComp = new component(tx, ty, 16, 16, "sprite", "", "", (tileNum-1)*18, 26, 1);
       tileComp.update();
     }
   }
@@ -318,21 +322,35 @@ function updateGameArea() {
 
     const newPose = tilePaths.move(currentPose, tileSettings, tileCodeProvider, motionDir, currentVelocity);
     currentPose = newPose;
+    segmentTrain.reportCurrentHeadPose(currentPose);
+    const segmentPoses = segmentTrain.getSegmentPoses(6);
 
-    myGamePiece1.angle = directions.toRadians(currentPose.dir);
-    myGamePiece1.flip = !directions.areEqual(currentPose.dir, directions.rotateClockwise(currentPose.normal, 2));
-    const centrePos = directions.translateEuclidean(currentPose.pos, currentPose.normal, myGamePiece1.height / 2);
-    myGamePiece1.x = centrePos[0];
-    myGamePiece1.y = topBarSize + roomStore.numRows * tileSize - centrePos[1];
+    poseComponent(myGamePiece1, currentPose);
 
     myScore.text = roomStore.roomName;
     drawTiles();
     myScore.update();
+
+    myGamePiece2.spriteX = 21;
+    for (let segmentPose of segmentPoses.slice().reverse()) {
+      poseComponent(myGamePiece2, segmentPose);
+      myGamePiece2.update();
+      myGamePiece2.spriteX += 11;
+    }
     myGamePiece1.update();
+
     myControlUp.update();
     myControlLeft.update();
     myControlRight.update();
     myControlDown.update();
+}
+
+function poseComponent(component, pose) {
+  component.angle = directions.toRadians(pose.dir);
+  component.flip = !directions.areEqual(pose.dir, directions.rotateClockwise(pose.normal, 2));
+  const centrePos = directions.translateEuclidean(pose.pos, pose.normal, component.height / 2);
+  component.x = centrePos[0];
+  component.y = topBarSize + roomStore.numRows * tileSize - centrePos[1];
 }
 
 function everyinterval(n) {

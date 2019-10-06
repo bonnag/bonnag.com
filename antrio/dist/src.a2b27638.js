@@ -617,7 +617,88 @@ module.exports = {
   subVec: subVec,
   scaleVec: scaleVec
 };
-},{}],"src/tile-paths2.js":[function(require,module,exports) {
+},{}],"src/segment-train.js":[function(require,module,exports) {
+const directions = require('./directions');
+
+class SegmentTrain {
+  constructor(headPose) {
+    this._history = [];
+    const maxSegments = 5;
+    this._segmentDistance = 10;
+    this._historyDistanceNeeded = this._segmentDistance * (1 + maxSegments);
+    this._epsilon = 1e-8; // Pretend the head moved in a straight-line to get to the initial pose.
+
+    let fakeOldHeadPose = headPose;
+    let backwardsDir = directions.reverse(headPose.dir);
+    let fakeDistanceSinceLast = 1;
+
+    for (let fakeTotalDistance = 0; fakeTotalDistance < this._historyDistanceNeeded; fakeTotalDistance += fakeDistanceSinceLast) {
+      this._history.unshift([fakeDistanceSinceLast, fakeOldHeadPose]);
+
+      fakeOldHeadPose = {
+        pos: directions.translateChebyshev(fakeOldHeadPose.pos, backwardsDir, 1),
+        dir: headPose.dir,
+        normal: headPose.normal
+      };
+    } //console.log(this._history);
+
+  }
+
+  reportCurrentHeadPose(pose) {
+    const lastEntry = this._history[this._history.length - 1];
+    const lastPose = lastEntry[1]; //console.log(this._history.length, lastPose, pose);
+
+    const distanceSinceLast = directions.euclideanDistanceBetween(lastPose.pos, pose.pos);
+
+    if (distanceSinceLast < this._epsilon) {
+      return;
+    }
+
+    this._history.push([distanceSinceLast, pose]); // TODO - need some way to purge if too long
+
+  }
+
+  getSegmentPoses(numSegments) {
+    const segmentPoses = [];
+    let totalDistance = 0;
+    let pose = undefined;
+    let numEntries = this._history.length;
+
+    for (let entryIdx = numEntries - 1; entryIdx >= 0; entryIdx--) {
+      if (segmentPoses.length === numSegments) {
+        break;
+      }
+
+      let entry = this._history[entryIdx];
+      let targetDistance = this._segmentDistance * (1.5 + segmentPoses.length);
+      let prevTotalDistance = totalDistance;
+      let prevPose = pose;
+      let distance = entry[0];
+      pose = entry[1];
+      totalDistance += distance;
+
+      if (prevTotalDistance <= targetDistance && totalDistance >= targetDistance) {
+        segmentPoses.push(this._interpolatePose(prevPose, pose, prevTotalDistance, totalDistance, targetDistance));
+      }
+    }
+
+    while (segmentPoses.length < numSegments) {
+      const fakePoseBetterThanNothing = pose;
+      segmentPoses.push(fakePoseBetterThanNothing);
+    }
+
+    return segmentPoses;
+  } // TODO - this isn't very good interpolation
+
+
+  _interpolatePose(prevPose, pose, prevTotalDistance, totalDistance, targetDistance) {
+    return prevPose;
+  }
+
+}
+
+module.exports = SegmentTrain;
+},{"./directions":"src/directions.js"}],"src/tile-paths2.js":[function(require,module,exports) {
 function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
 
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
@@ -916,6 +997,8 @@ var _roomStore = _interopRequireDefault(require("./room-store.js"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+const SegmentTrain = require('./segment-train.js');
+
 const tilePaths = require('./tile-paths2');
 
 const directions = require('./directions');
@@ -935,6 +1018,7 @@ let currentPose = {
   normal: directions.fromCardinal('N')
 };
 let currentVelocity = 0.0;
+const segmentTrain = new SegmentTrain(currentPose);
 const initialVelocity = 1.0;
 const maxVelocity = 2.5;
 const tileCodeProvider = {
@@ -946,6 +1030,7 @@ const tileCodeProvider = {
   }
 };
 let myGamePiece1 = undefined;
+let myGamePiece2 = undefined;
 let myScore = undefined;
 let myControlUp = undefined;
 let myControlLeft = undefined;
@@ -998,7 +1083,9 @@ function startGame() {
       e.preventDefault();
     }
   });
-  myGamePiece1 = new component(160, 257, 16, 16, "sprite", "", "", 0, 16, 2);
+  myGamePiece1 = new component(0, 0, 16, 18, "sprite", "", "", 1, 50, 1);
+  myGamePiece2 = new component(0, 0, 10, 18, "sprite", "", "", 21, 50, 1); // we fiddle with spriteX later
+
   myScore = new component(16, 14, 0, 0, "text", "black", "");
   myControlUp = new component(60, 240, 42, 42, "sprite", "", "", 52, 0, 2);
   myControlLeft = new component(25, 275, 42, 44, "sprite", "", "", 10, 0, 2);
@@ -1166,7 +1253,7 @@ function drawTiles() {
       if (!tileNum) tileNum = 1;
       var tx = col * tileSize + tileSize / 2;
       var ty = topBarSize + row * tileSize + tileSize / 2;
-      var tileComp = new component(tx, ty, 16, 16, "sprite", "", "", (tileNum - 1) * 9, 26, 2);
+      var tileComp = new component(tx, ty, 16, 16, "sprite", "", "", (tileNum - 1) * 18, 26, 1);
       tileComp.update();
     }
   }
@@ -1251,19 +1338,33 @@ function updateGameArea() {
 
   const newPose = tilePaths.move(currentPose, tileSettings, tileCodeProvider, motionDir, currentVelocity);
   currentPose = newPose;
-  myGamePiece1.angle = directions.toRadians(currentPose.dir);
-  myGamePiece1.flip = !directions.areEqual(currentPose.dir, directions.rotateClockwise(currentPose.normal, 2));
-  const centrePos = directions.translateEuclidean(currentPose.pos, currentPose.normal, myGamePiece1.height / 2);
-  myGamePiece1.x = centrePos[0];
-  myGamePiece1.y = topBarSize + roomStore.numRows * tileSize - centrePos[1];
+  segmentTrain.reportCurrentHeadPose(currentPose);
+  const segmentPoses = segmentTrain.getSegmentPoses(6);
+  poseComponent(myGamePiece1, currentPose);
   myScore.text = roomStore.roomName;
   drawTiles();
   myScore.update();
+  myGamePiece2.spriteX = 21;
+
+  for (let segmentPose of segmentPoses.slice().reverse()) {
+    poseComponent(myGamePiece2, segmentPose);
+    myGamePiece2.update();
+    myGamePiece2.spriteX += 11;
+  }
+
   myGamePiece1.update();
   myControlUp.update();
   myControlLeft.update();
   myControlRight.update();
   myControlDown.update();
+}
+
+function poseComponent(component, pose) {
+  component.angle = directions.toRadians(pose.dir);
+  component.flip = !directions.areEqual(pose.dir, directions.rotateClockwise(pose.normal, 2));
+  const centrePos = directions.translateEuclidean(pose.pos, pose.normal, component.height / 2);
+  component.x = centrePos[0];
+  component.y = topBarSize + roomStore.numRows * tileSize - centrePos[1];
 }
 
 function everyinterval(n) {
@@ -1275,7 +1376,7 @@ function everyinterval(n) {
 }
 
 window.addEventListener('load', startGame, false);
-},{"./room-store.js":"src/room-store.js","./tile-paths2":"src/tile-paths2.js","./directions":"src/directions.js"}],"../../../AppData/Roaming/npm/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"./room-store.js":"src/room-store.js","./segment-train.js":"src/segment-train.js","./tile-paths2":"src/tile-paths2.js","./directions":"src/directions.js"}],"../../../AppData/Roaming/npm/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -1303,7 +1404,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54879" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52055" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
