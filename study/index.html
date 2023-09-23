@@ -256,7 +256,7 @@ function checkTflStatusStale() {
 }
 function loadTflApiKey() {
 	var key = localStorage.getItem("tflApiKey");
-	if (key.length == 32) {
+	if (key && key.length && key.length == 32) {
 		tfl_api_key = key;
 		document.getElementById('tfl_api_key_input').value = key;
 	}
