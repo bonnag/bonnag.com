@@ -1,0 +1,337 @@
+<html>
+<head>
+<link rel="stylesheet" href="./flip/flip.css" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323">
+<style type="text/css">
+body {
+	background-color: #202020;
+	color: white;
+	font-family: 'Roboto', serif;
+	text-align: center;
+	padding: 0px;
+	margin: 0px;
+	width: 780px;
+	height: 1300px;
+}
+.tick {
+	font-family: 'Roboto Mono', monospace;
+	font-weight: 800;
+	height: 250px;
+}
+.below-caption-div {
+	text-align: center;
+	font-size: 24px;
+	padding-top: 12px;
+	padding-bottom: 24px;
+	/*border: 1px solid black;*/
+}
+.inline-image {
+	max-height: 24px;
+	vertical-align: middle;
+}
+.dotmatrix {
+	margin: 0px;
+	margin-left: 15px;
+	width: 750px;
+	color: yellow;
+	font-family: 'VT323', monospace;
+	list-style-type: none;
+	font-size: 48px;
+	text-align: left;
+}
+.tube-status {
+	margin: 0px;
+	margin-left: 50px;
+	width: 680px;
+}
+.tube-status-row {
+	font-size: 24px;
+	color: white;
+	padding: 2px;
+}
+td {
+	padding: 5px;
+}
+table { 
+    border-spacing: 2px;
+    border-collapse: separate;
+}
+.tick-credits {
+	display: none;
+}
+.credits {
+	padding-top: 48px;
+	font-size: 12px;
+}
+</style>
+<script src="./flip/flip.min.js"></script>
+<script>
+var tfl_api_key = '';
+var tflArrivalsLastUpdated = new Date(0);
+var tflStatusLastUpdated = new Date(0);
+var tflArrivalData = [];
+function handleTickInitLocal(tick) {
+  Tick.helper.interval(function(){
+      var d = Tick.helper.date();
+      tick.value = {
+          sep: ':',
+          hours: d.getHours(),
+          minutes: d.getMinutes()
+      };
+  });
+}
+function handleTickInitWorld(tick) {
+  Tick.helper.interval(function(){
+      var d = Tick.helper.date();
+	  var utcDateString = d.toISOString();
+	  var utcDate = new Date(utcDateString);
+	  utcDate.setHours(utcDate.getHours() + 8);
+	  d = utcDate;
+      tick.value = {
+          sep: ':',
+          hours: d.getHours(),
+          minutes: d.getMinutes()
+      };
+  });
+}
+function handleTickInitTransport(tick) {
+  Tick.helper.interval(function(){
+      var d = Tick.helper.date();
+	  var utcDateString = d.toISOString();
+	  var utcDate = new Date(utcDateString);
+	  utcDate.setHours(utcDate.getHours() + 8);
+	  d = utcDate;
+      tick.value = {
+          sep: ':',
+          hours: d.getHours(),
+          minutes: d.getMinutes()
+      };
+  });
+}
+function tflArrivals() {
+	fetch('https://api.tfl.gov.uk/StopPoint/490004294H/Arrivals?app_key=' + tfl_api_key)
+    .then(function (response) {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(function (data) {
+        console.log(data);
+		handleRawTflArrivals(data);
+		window.setTimeout(tflArrivals, 30 * 1000);
+    })
+    .catch(function (error) {
+        console.error('There was a problem with the fetch operation:', error);
+		window.setTimeout(tflArrivals, 30 * 1000);
+    });
+}
+function handleRawTflArrivals(data) {
+	var now = new Date();
+	var cutoff = new Date(now.getTime() + 180 * 1000);
+	const relevantRawBuses = data.filter(function(currentValue, index, array) {
+		var expected = new Date(currentValue.expectedArrival);
+		var expectedMillis = expected.getTime();
+		var cutoffMillis = cutoff.getTime();
+		return (currentValue.lineName == "195" || currentValue.lineName == "E8") &&	expectedMillis > cutoffMillis;
+	});
+	tflArrivalData = relevantRawBuses.map(function(currentValue, index, array) {
+		var expected = new Date(currentValue.expectedArrival);
+		var lineName = currentValue.lineName;
+		var destination = currentValue.destinationName;
+		var name = lineName;
+		while (name.length < 3) {
+			name += "\u00A0";
+		}
+		name += ' ';
+		name += destination;
+		var maxLength = 29;
+		if (name.length >= maxLength - 1) {
+			name = name.substring(0, maxLength - 1);
+		}
+		name += ' ';
+		while (name.length < maxLength) {
+			name += '.';
+		}
+		return { 'name': name, 'expected': expected };
+	});
+	tflArrivalData.sort(function(a,b) {
+		return a.expected.getTime() - b.expected.getTime();
+	});
+	tflArrivalsLastUpdated = new Date();
+	renderArrivals();
+}
+function checkTflArrivalsStale() {
+    console.log('checking for stale arrivals');
+	renderArrivals();
+}
+function renderArrivals() {
+	var el = document.getElementById("arrivals-ul");
+	el.innerHTML = '';
+	var now = new Date();
+	var isStale = (now.getTime() - tflArrivalsLastUpdated.getTime()) > 120 * 1000;
+	for (var i = 0; i < 6; i++) {
+		var itemEl = document.createElement('li');
+		if (i < tflArrivalData.length && !isStale) {
+			var text = tflArrivalData[i].name + " ";
+			var expected = tflArrivalData[i].expected;
+			var remaining = Math.floor((expected.getTime() - now.getTime()) / (60 * 1000));
+			if (remaining < 1) {
+				text += "due";
+			} else if (remaining < 2) {
+				text += "\u00A0" + "1 min";
+			} else {
+				text += remaining.toString().padStart(2, '\u00A0') + " mins";
+			}
+			itemEl.innerText = text;
+		} else {
+			itemEl.innerText = "---";
+		}
+		el.appendChild(itemEl);
+	}
+	var lastItemEl = document.createElement('li');
+	lastItemEl.setAttribute('align', 'right');
+	if (tflArrivalsLastUpdated == new Date(0)) {
+		lastItemEl.innerText = 'no data available'; 
+	} else {
+		var hourStr = tflArrivalsLastUpdated.getHours().toString().padStart(2, '0');
+		var minuteStr = tflArrivalsLastUpdated.getMinutes().toString().padStart(2, '0');
+		if (isStale) {
+			lastItemEl.innerText = 'error: no data since ' + hourStr + ':' + minuteStr; 
+		} else {
+			lastItemEl.innerText = 'last updated ' + hourStr + ':' + minuteStr; 
+		}
+	}
+	el.appendChild(lastItemEl);
+}
+function tflStatus()
+{
+	fetch('https://api.tfl.gov.uk/Line/piccadilly,elizabeth/Status?detail=false&app_key=' + tfl_api_key)
+    .then(function (response) {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(function (data) {
+        console.log(data);
+		handleRawTflStatus(data);
+		window.setTimeout(tflStatus, 30 * 1000);
+    })
+    .catch(function (error) {
+        console.error('There was a problem with the fetch operation:', error);
+		window.setTimeout(tflStatus, 30 * 1000);
+    });
+}
+function handleRawTflStatus(data) {
+	data.forEach(function(item) {
+		var lineId = item.id;
+		var lineStatuses = item.lineStatuses;
+		var firstStatusSeverityDescription = lineStatuses[0].statusSeverityDescription;
+		handleTflStatus(lineId, firstStatusSeverityDescription);
+	});
+	tflStatusLastUpdated = new Date();
+}
+function handleTflStatus(lineId, statusSeverityDescription) {
+	var el = document.getElementById(lineId + "-status");
+	if (statusSeverityDescription == "Good Service") {
+		el.setAttribute('bgcolor', "green");
+	} else if (statusSeverityDescription == "Unknown") {
+		el.setAttribute('bgcolor', "grey");
+	} else {
+		el.setAttribute('bgcolor', "yellow");
+	}
+	el.innerText = statusSeverityDescription;
+}
+function checkTflStatusStale() {
+    console.log('checking for stale status');
+	var now = new Date();
+	var age = now.getTime() - tflStatusLastUpdated.getTime();
+	if (age > 90 * 1000) {
+		handleTflStatus("piccadilly", "Unknown");
+		handleTflStatus("elizabeth", "Unknown");
+	}
+}
+function loadTflApiKey() {
+	var key = localStorage.getItem("tflApiKey");
+	if (key.length == 32) {
+		tfl_api_key = key;
+		document.getElementById('tfl_api_key_input').value = key;
+	}
+}
+function saveTflApiKey() {
+	var key = document.getElementById('tfl_api_key_input').value;
+	if (key.length != 32) {
+		alert('bad key');
+	}
+	tfl_api_key = key;
+	localStorage.setItem("tflApiKey", key);
+}
+function init()
+{
+	loadTflApiKey();
+	renderArrivals();
+	tflArrivals();
+	tflStatus();
+	window.setInterval(checkTflArrivalsStale, 45 * 1000);
+	window.setInterval(checkTflStatusStale, 45 * 1000);
+}
+</script>
+</head>
+<body onload="init()">
+	<div>&nbsp;</div>
+	<div class="tick" data-did-init="handleTickInitLocal">
+	  <div data-layout="horizontal fit">
+		  <span data-key="hours" data-transform="pad(00)" data-view="flip"></span>
+		  <span data-view="text" data-key="sep" class="tick-text-inline"></span>
+		  <span data-key="minutes" data-transform="pad(00)" data-view="flip"></span>
+	  </div>
+	</div>
+	<div class="below-caption-div">
+	<img src="./united-kingdom-flag.png" class="inline-image"> London
+	</div>
+	<div class="tick" data-did-init="handleTickInitWorld">
+	  <div data-layout="horizontal fit">
+		  <span data-key="hours" data-transform="pad(00)" data-view="flip"></span>
+		  <span data-view="text" data-key="sep" class="tick-text-inline"></span>
+		  <span data-key="minutes" data-transform="pad(00)" data-view="flip"></span>
+	  </div>
+	</div>
+	<div class="below-caption-div">
+	<img src="./philippines-flag.png" class="inline-image"> Manila
+	</div>
+	<div>
+		<ul class="dotmatrix" id="arrivals-ul">
+		</ul>
+	</div>
+	<div class="below-caption-div">
+		Half Acre <img src="./buses-logo.png" class="inline-image">
+		/
+		Brentford <img src="./national-rail-logo.png" class="inline-image">
+	</div>
+	<div class="tube-status">
+		<table width="100%">
+		<tr class="tube-status-row">
+		<td width="18%" bgcolor="#003688">Piccadilly</td>
+		<td width="32" id="piccadilly-status" bgcolor="grey">Unknown</td>
+		<td width="18%" bgcolor="#6950a1">Elizabeth</td>
+		<td width="32%" id="elizabeth-status" bgcolor="grey">Unknown</td>
+		</tr>
+		</table>
+	</div>
+	<div class="credits">
+		<p>
+		Powered by: pqina.nl, TFL APIs, LDBWS, github pages
+		</p>
+		<p>
+			<form>
+				<label for="tfl_api_key_input">TFL API Key</label><br>
+				<input id="tfl_api_key_input" name="tfl_api_key_input" type="text" maxlength ="32" size="32"></input>
+				<input type="button" value="Save" onclick="saveTflApiKey()"></input>
+			</form>
+		</p>
+	</div>
+</body>
+</html>
