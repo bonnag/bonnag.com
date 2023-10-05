@@ -69,6 +69,7 @@ table {
 <script src="./flip/flip.min.js"></script>
 <script>
 var tfl_api_key = '';
+var rdm_api_key = '';
 var tflArrivalsLastUpdated = new Date(0);
 var tflStatusLastUpdated = new Date(0);
 var tflArrivalData = [];
@@ -166,6 +167,31 @@ function handleRawTflArrivals(data) {
 function checkTflArrivalsStale() {
     console.log('checking for stale arrivals');
 	renderArrivals();
+}
+function rdmDepartures() {
+	fetch('https://api1.raildata.org.uk/1010-live-departure-board-dep/LDBWS/api/20220120/GetDepBoardWithDetails/BFD', {
+		headers: {
+		  "x-apikey": rdm_api_key
+		}
+	})
+    .then(function (response) {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(function (data) {
+        console.log(data);
+		handleRawRdmDepartures(data);
+		window.setTimeout(rdmDepartures, 30 * 1000);
+    })
+    .catch(function (error) {
+        console.error('There was a problem with the fetch operation:', error);
+		window.setTimeout(rdmDepartures, 30 * 1000);
+    });
+}
+function handleRawRdmDepartures(data) {
+	// TODO
 }
 function renderArrivals() {
 	var el = document.getElementById("arrivals-ul");
@@ -269,12 +295,29 @@ function saveTflApiKey() {
 	tfl_api_key = key;
 	localStorage.setItem("tflApiKey", key);
 }
+function loadRdmApiKey() {
+	var key = localStorage.getItem("rdmApiKey");
+	if (key && key.length && key.length == 48) {
+		rdm_api_key = key;
+		document.getElementById('rdm_api_key_input').value = key;
+	}
+}
+function saveRdmApiKey() {
+	var key = document.getElementById('rdm_api_key_input').value;
+	if (key.length != 48) {
+		alert('bad key');
+	}
+	rdm_api_key = key;
+	localStorage.setItem("rdmApiKey", key);
+}
 function init()
 {
 	loadTflApiKey();
+	loadRdmApiKey();
 	renderArrivals();
 	tflArrivals();
 	tflStatus();
+	rdmDepartures();
 	window.setInterval(checkTflArrivalsStale, 45 * 1000);
 	window.setInterval(checkTflStatusStale, 45 * 1000);
 }
@@ -323,13 +366,17 @@ function init()
 	</div>
 	<div class="credits">
 		<p>
-		Powered by: pqina.nl, TFL APIs, LDBWS, github pages
+		Powered by: pqina.nl, TFL APIs, RDM/LDBWS, github pages
 		</p>
 		<p>
 			<form>
 				<label for="tfl_api_key_input">TFL API Key</label><br>
 				<input id="tfl_api_key_input" name="tfl_api_key_input" type="text" maxlength ="32" size="32"></input>
 				<input type="button" value="Save" onclick="saveTflApiKey()"></input>
+				<br/>
+				<label for="rdm_api_key_input">RDM API Key</label><br>
+				<input id="rdm_api_key_input" name="rdm_api_key_input" type="text" maxlength ="48" size="48"></input>
+				<input type="button" value="Save" onclick="saveRdmApiKey()"></input>
 			</form>
 		</p>
 	</div>
