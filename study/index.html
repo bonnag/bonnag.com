@@ -21,17 +21,18 @@ body {
 	font-family: 'Roboto Mono', monospace;
 	font-weight: 800;
 	height: 250px;
-	max-width: 500px;
+	width: 100%;
+	max-width: 800px;
 }
 .below-caption-div {
 	text-align: center;
-	font-size: 24px;
+	font-size: 200%;
 	padding-top: 12px;
 	padding-bottom: 24px;
 	/*border: 1px solid black;*/
 }
 .inline-image {
-	max-height: 24px;
+	max-height: 36px;
 	vertical-align: middle;
 }
 .dotmatrix {
@@ -41,7 +42,7 @@ body {
 	color: yellow;
 	font-family: 'VT323', monospace;
 	list-style-type: none;
-	font-size: 48px;
+	font-size: 300%;
 	text-align: left;
 }
 .tube-status {
@@ -50,7 +51,7 @@ body {
 	width: 85%;
 }
 .tube-status-row {
-	font-size: 24px;
+	font-size: 200%;
 	color: white;
 	padding: 2px;
 }
@@ -69,7 +70,7 @@ table {
 }
 .credits {
 	padding-top: 48px;
-	font-size: 12px;
+	font-size: 50%;
 }
 </style>
 <script src="./flip/flip.min.js"></script>
@@ -466,12 +467,12 @@ function init()
 		Brentford <img src="./national-rail-logo.png" class="inline-image">
 	</div>
 	<div class="tube-status">
-		<table width="100%">
-		<tr class="tube-status-row">
-		<td width="18%" bgcolor="#003688">Piccadilly</td>
-		<td width="32" id="piccadilly-status" style="background-color:grey" class="tube-status-cell">Unknown</td>
-		<td width="18%" bgcolor="#6950a1">Elizabeth</td>
-		<td width="32%" id="elizabeth-status" style="background-color:grey" class="tube-status-cell">Unknown</td>
+		<table>
+			<tr class="tube-status-row">
+			<td width="18%" bgcolor="#003688">Piccadilly</td>
+			<td width="32" id="piccadilly-status" style="background-color:grey" class="tube-status-cell">Unknown</td>
+			<td width="18%" bgcolor="#6950a1">Elizabeth</td>
+			<td width="32%" id="elizabeth-status" style="background-color:grey" class="tube-status-cell">Unknown</td>
 		</tr>
 		</table>
 	</div>
