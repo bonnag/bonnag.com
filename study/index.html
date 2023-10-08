@@ -78,12 +78,9 @@ table {
 var tfl_api_key = '';
 var rdm_api_key = '';
 
-var tflArrivalsLastUpdated = new Date(0);
-var tflStatusLastUpdated = new Date(0);
 var tflArrivalData = [];
-
-var rdmDeparturesLastUpdated = new Date(0);
 var rdmDeparturesData = [];
+var tflStatusLastUpdated = new Date(0);
 
 function handleTickInitLocal(tick) {
   Tick.helper.interval(function(){
@@ -174,12 +171,11 @@ function handleRawTflArrivals(data) {
 		while (name.length < maxLength) {
 			name += '.';
 		}
-		return { 'name': name, 'expected': expected };
+		return { 'name': name, 'expected': expected, 'updated': now };
 	});
 	tflArrivalData.sort(function(a,b) {
 		return a.expected.getTime() - b.expected.getTime();
 	});
-	tflArrivalsLastUpdated = new Date();
 	renderArrivals();
 }
 
@@ -273,7 +269,7 @@ function handleRawRdmDepartures(data) {
 		} else {
 			name += currentValue.std + " due " + currentValue.etd + "\u00A0";
 		}
-		return { 'name': name, 'expected': expected };
+		return { 'name': name, 'expected': expected, 'updated': now };
 	}).filter(function(currentValue, index, array) {
 		var expectedMillis = currentValue.expected.getTime();
 		var cutoffMillis = cutoff.getTime();
@@ -313,14 +309,22 @@ function renderArrivals() {
 		var itemEl = document.createElement('li');
 		if (i < combinedArrivals.length) {
 			var text = combinedArrivals[i].name + " ";
-			var expected = combinedArrivals[i].expected;
-			var remaining = Math.floor((expected.getTime() - now.getTime()) / (60 * 1000));
-			if (remaining < 1) {
-				text += "due";
-			} else if (remaining < 2) {
-				text += "\u00A0" + "1 min";
+			var updated = combinedArrivals[i].updated;
+			var ageMillis = now.getTime() - updated.getTime();
+			if (ageMillis > 180 * 1000) {
+				text += "unknown";
 			} else {
-				text += remaining.toString().padStart(2, '\u00A0') + " mins";
+				var expected = combinedArrivals[i].expected;
+				var remainingMins = Math.floor((expected.getTime() - now.getTime()) / (60 * 1000));
+				if (remainingMins < 1) {
+					text += "due";
+				} else if (remainingMins < 2) {
+					text += "\u00A0" + "1 min";
+				} else if (remainingMins > 99) {
+					text += "oh dear";
+				} else {
+					text += remainingMins.toString().padStart(2, '\u00A0') + " mins";
+				}
 			}
 			itemEl.innerText = text;
 		} else {
