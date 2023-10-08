@@ -4,6 +4,9 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="refresh" content="7200">
+<title>Study Clock</title>
 <style type="text/css">
 body {
 	background-color: #202020;
@@ -51,6 +54,9 @@ body {
 	color: white;
 	padding: 2px;
 }
+.tube-status-cell {
+	color: black;
+}
 td {
 	padding: 5px;
 }
@@ -68,11 +74,17 @@ table {
 </style>
 <script src="./flip/flip.min.js"></script>
 <script>
+
 var tfl_api_key = '';
 var rdm_api_key = '';
+
 var tflArrivalsLastUpdated = new Date(0);
 var tflStatusLastUpdated = new Date(0);
 var tflArrivalData = [];
+
+var rdmDeparturesLastUpdated = new Date(0);
+var rdmDeparturesData = [];
+
 function handleTickInitLocal(tick) {
   Tick.helper.interval(function(){
       var d = Tick.helper.date();
@@ -83,6 +95,7 @@ function handleTickInitLocal(tick) {
       };
   });
 }
+
 function handleTickInitWorld(tick) {
   Tick.helper.interval(function(){
       var d = Tick.helper.date();
@@ -97,6 +110,7 @@ function handleTickInitWorld(tick) {
       };
   });
 }
+
 function handleTickInitTransport(tick) {
   Tick.helper.interval(function(){
       var d = Tick.helper.date();
@@ -111,6 +125,7 @@ function handleTickInitTransport(tick) {
       };
   });
 }
+
 function tflArrivals() {
 	fetch('https://api.tfl.gov.uk/StopPoint/490004294H/Arrivals?app_key=' + tfl_api_key)
     .then(function (response) {
@@ -129,15 +144,18 @@ function tflArrivals() {
 		window.setTimeout(tflArrivals, 30 * 1000);
     });
 }
+
 function handleRawTflArrivals(data) {
 	var now = new Date();
-	var cutoff = new Date(now.getTime() + 180 * 1000);
+	// if it's less than three minutes in the future, we won't be able to get there in time
+	var cutoff = new Date(now.getTime() + 3 * 60 * 1000);
 	const relevantRawBuses = data.filter(function(currentValue, index, array) {
 		var expected = new Date(currentValue.expectedArrival);
 		var expectedMillis = expected.getTime();
 		var cutoffMillis = cutoff.getTime();
 		return (currentValue.lineName == "195" || currentValue.lineName == "E8") &&	expectedMillis > cutoffMillis;
 	});
+	console.log(relevantRawBuses);
 	tflArrivalData = relevantRawBuses.map(function(currentValue, index, array) {
 		var expected = new Date(currentValue.expectedArrival);
 		var lineName = currentValue.lineName;
@@ -164,10 +182,12 @@ function handleRawTflArrivals(data) {
 	tflArrivalsLastUpdated = new Date();
 	renderArrivals();
 }
-function checkTflArrivalsStale() {
+
+function renderArrivalsToAvoidStaleness() {
     console.log('checking for stale arrivals');
 	renderArrivals();
 }
+
 function rdmDepartures() {
 	fetch('https://api1.raildata.org.uk/1010-live-departure-board-dep/LDBWS/api/20220120/GetDepBoardWithDetails/BFD', {
 		headers: {
@@ -190,19 +210,110 @@ function rdmDepartures() {
 		window.setTimeout(rdmDepartures, 30 * 1000);
     });
 }
-function handleRawRdmDepartures(data) {
-	// TODO
+
+function tryExtractLocalTime(text) {
+	const parsed = String(text).match(/^(?<hours>\d+):(?<minutes>\d+)$/);
+	if (parsed == null) {
+		// e.g. the etd field can be "on time" !
+		return null;
+	}
+	const hours = parseInt(parsed.groups.hours, 10);
+	const minutes = parseInt(parsed.groups.minutes, 10);
+	// this is all local time (we assume the browser is in London!)
+	// assume the time from the api is the same day but ...
+	const date = new Date();
+	date.setHours(hours);
+	date.setMinutes(minutes);
+	// ... because the rail api just gives HH:MM weird things can happen
+	// like if it gives us 23:59 at 00:01 or vice versa, so we might need
+	// to re-intepret as next day or yesterday
+	const now = new Date();
+	const tooFarDelta = 20 * 60 * 60 * 1000;
+	if (date.getTime() > now.getTime() + tooFarDelta) {
+		date.setDate(date.getDate() - 1);
+	}
+	if (date.getTime() < now.getTime() - tooFarDelta) {
+		date.setDate(date.getDate() + 1);
+	}
+	return date;
 }
+
+function handleRawRdmDepartures(data) {
+	var now = new Date();
+	// if it's less than eight minutes in the future, we won't be able to get there in time
+	var cutoff = new Date(now.getTime() + 8 * 60 * 1000);
+	// only care about trains to Waterloo (WAT)
+	// .. except today they are only going to Barnes (BNS)!
+	// not sure how to exclude ones that go the wrong way round the Hounslow loop
+	// maybe check next stop is Kew Bridge (KWB)
+	const relevantRawTrains = data.trainServices.filter(function(currentValue, index, array) {
+		return true &&
+		  currentValue.isCancelled == false &&
+		  currentValue.destination.length == 1 &&
+		  (currentValue.destination[0].crs == 'WAT' || currentValue.destination[0].crs == 'BNS') &&
+		  currentValue.serviceType == "train" &&
+		  currentValue.subsequentCallingPoints.length >= 1 &&
+		  currentValue.subsequentCallingPoints[0].callingPoint.length >= 1 &&
+		  currentValue.subsequentCallingPoints[0].callingPoint[0].crs == 'KWB';
+	});
+	console.log(relevantRawTrains);
+	rdmDeparturesData = relevantRawTrains.map(function(currentValue, index, array) {
+		var expected = tryExtractLocalTime(currentValue.etd);
+		var onTime = false;
+		if (expected == null) {
+			expected = tryExtractLocalTime(currentValue.std);
+			onTime = true;
+		}
+		var name = "SWR Waterloo ";
+		if (currentValue.destination[0].crs == "BNS") {
+			name = "SWR Barnes\u00A0\u00A0 "
+		}
+		if (onTime) {
+			name += currentValue.std + " on time" + " ..";
+		} else {
+			name += currentValue.std + " due " + currentValue.etd + "\u00A0";
+		}
+		return { 'name': name, 'expected': expected };
+	}).filter(function(currentValue, index, array) {
+		var expectedMillis = currentValue.expected.getTime();
+		var cutoffMillis = cutoff.getTime();
+		return expectedMillis > cutoffMillis;
+	});
+	rdmDeparturesData.sort(function(a,b) {
+		return a.expected.getTime() - b.expected.getTime();
+	});
+	console.log(rdmDeparturesData);
+	rdmDeparturesLastUpdated = new Date();
+	renderArrivals();
+}
+
+function computeCombinedArrivals() {
+	var combinedArrivals = [];
+	// always include up to two trains
+	for (var i = 0; i < 2 && i < rdmDeparturesData.length; i++) {
+		combinedArrivals.push(rdmDeparturesData[i]);
+	}
+	// then add buses to bring up to 6 max
+	for (var i = 0; i < 999 && i < tflArrivalData.length && combinedArrivals.length < 6; i++) {
+		combinedArrivals.push(tflArrivalData[i]);
+	}
+	combinedArrivals.sort(function(a,b) {
+		return a.expected.getTime() - b.expected.getTime();
+	});
+	console.log(combinedArrivals);
+	return combinedArrivals;
+}
+
 function renderArrivals() {
 	var el = document.getElementById("arrivals-ul");
 	el.innerHTML = '';
 	var now = new Date();
-	var isStale = (now.getTime() - tflArrivalsLastUpdated.getTime()) > 120 * 1000;
+	var combinedArrivals = computeCombinedArrivals();
 	for (var i = 0; i < 6; i++) {
 		var itemEl = document.createElement('li');
-		if (i < tflArrivalData.length && !isStale) {
-			var text = tflArrivalData[i].name + " ";
-			var expected = tflArrivalData[i].expected;
+		if (i < combinedArrivals.length) {
+			var text = combinedArrivals[i].name + " ";
+			var expected = combinedArrivals[i].expected;
 			var remaining = Math.floor((expected.getTime() - now.getTime()) / (60 * 1000));
 			if (remaining < 1) {
 				text += "due";
@@ -217,21 +328,8 @@ function renderArrivals() {
 		}
 		el.appendChild(itemEl);
 	}
-	var lastItemEl = document.createElement('li');
-	lastItemEl.setAttribute('align', 'right');
-	if (tflArrivalsLastUpdated == new Date(0)) {
-		lastItemEl.innerText = 'no data available'; 
-	} else {
-		var hourStr = tflArrivalsLastUpdated.getHours().toString().padStart(2, '0');
-		var minuteStr = tflArrivalsLastUpdated.getMinutes().toString().padStart(2, '0');
-		if (isStale) {
-			lastItemEl.innerText = 'error: no data since ' + hourStr + ':' + minuteStr; 
-		} else {
-			lastItemEl.innerText = 'last updated ' + hourStr + ':' + minuteStr; 
-		}
-	}
-	el.appendChild(lastItemEl);
 }
+
 function tflStatus()
 {
 	fetch('https://api.tfl.gov.uk/Line/piccadilly,elizabeth/Status?detail=false&app_key=' + tfl_api_key)
@@ -251,6 +349,7 @@ function tflStatus()
 		window.setTimeout(tflStatus, 30 * 1000);
     });
 }
+
 function handleRawTflStatus(data) {
 	data.forEach(function(item) {
 		var lineId = item.id;
@@ -260,17 +359,19 @@ function handleRawTflStatus(data) {
 	});
 	tflStatusLastUpdated = new Date();
 }
+
 function handleTflStatus(lineId, statusSeverityDescription) {
 	var el = document.getElementById(lineId + "-status");
 	if (statusSeverityDescription == "Good Service") {
-		el.setAttribute('bgcolor', "green");
+		el.setAttribute('bgcolor', "#00ff00");
 	} else if (statusSeverityDescription == "Unknown") {
-		el.setAttribute('bgcolor', "grey");
+		el.setAttribute('bgcolor', "#888888");
 	} else {
-		el.setAttribute('bgcolor', "yellow");
+		el.setAttribute('bgcolor', "#ffff00");
 	}
 	el.innerText = statusSeverityDescription;
 }
+
 function checkTflStatusStale() {
     console.log('checking for stale status');
 	var now = new Date();
@@ -280,6 +381,7 @@ function checkTflStatusStale() {
 		handleTflStatus("elizabeth", "Unknown");
 	}
 }
+
 function loadTflApiKey() {
 	var key = localStorage.getItem("tflApiKey");
 	if (key && key.length && key.length == 32) {
@@ -287,6 +389,7 @@ function loadTflApiKey() {
 		document.getElementById('tfl_api_key_input').value = key;
 	}
 }
+
 function saveTflApiKey() {
 	var key = document.getElementById('tfl_api_key_input').value;
 	if (key.length != 32) {
@@ -295,6 +398,7 @@ function saveTflApiKey() {
 	tfl_api_key = key;
 	localStorage.setItem("tflApiKey", key);
 }
+
 function loadRdmApiKey() {
 	var key = localStorage.getItem("rdmApiKey");
 	if (key && key.length && key.length == 48) {
@@ -302,6 +406,7 @@ function loadRdmApiKey() {
 		document.getElementById('rdm_api_key_input').value = key;
 	}
 }
+
 function saveRdmApiKey() {
 	var key = document.getElementById('rdm_api_key_input').value;
 	if (key.length != 48) {
@@ -310,6 +415,7 @@ function saveRdmApiKey() {
 	rdm_api_key = key;
 	localStorage.setItem("rdmApiKey", key);
 }
+
 function init()
 {
 	loadTflApiKey();
@@ -318,9 +424,10 @@ function init()
 	tflArrivals();
 	tflStatus();
 	rdmDepartures();
-	window.setInterval(checkTflArrivalsStale, 45 * 1000);
+	window.setInterval(renderArrivalsToAvoidStaleness, 45 * 1000);
 	window.setInterval(checkTflStatusStale, 45 * 1000);
 }
+
 </script>
 </head>
 <body onload="init()">
@@ -358,9 +465,9 @@ function init()
 		<table width="100%">
 		<tr class="tube-status-row">
 		<td width="18%" bgcolor="#003688">Piccadilly</td>
-		<td width="32" id="piccadilly-status" bgcolor="grey">Unknown</td>
+		<td width="32" id="piccadilly-status" bgcolor="grey" class="tube-status-cell">Unknown</td>
 		<td width="18%" bgcolor="#6950a1">Elizabeth</td>
-		<td width="32%" id="elizabeth-status" bgcolor="grey">Unknown</td>
+		<td width="32%" id="elizabeth-status" bgcolor="grey" class="tube-status-cell">Unknown</td>
 		</tr>
 		</table>
 	</div>
