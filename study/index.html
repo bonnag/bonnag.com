@@ -4,7 +4,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323">
-<meta name="viewport" content="width=780">
+<meta name="viewport" content="width=900">
 <meta http-equiv="refresh" content="7200">
 <title>Study Clock</title>
 <style type="text/css">
@@ -367,11 +367,11 @@ function handleRawTflStatus(data) {
 function handleTflStatus(lineId, statusSeverityDescription) {
 	var el = document.getElementById(lineId + "-status");
 	if (statusSeverityDescription == "Good Service") {
-		el.setAttribute('bgcolor', "#00ff00");
+		el.setAttribute('style', "background-color:#00ff00");
 	} else if (statusSeverityDescription == "Unknown") {
-		el.setAttribute('bgcolor', "#888888");
+		el.setAttribute('style', "background-color:#888888");
 	} else {
-		el.setAttribute('bgcolor', "#ffff00");
+		el.setAttribute('style', "background-color:#ffff00");
 	}
 	el.innerText = statusSeverityDescription;
 }
@@ -469,9 +469,9 @@ function init()
 		<table width="100%">
 		<tr class="tube-status-row">
 		<td width="18%" bgcolor="#003688">Piccadilly</td>
-		<td width="32" id="piccadilly-status" bgcolor="grey" class="tube-status-cell">Unknown</td>
+		<td width="32" id="piccadilly-status" style="background-color:grey" class="tube-status-cell">Unknown</td>
 		<td width="18%" bgcolor="#6950a1">Elizabeth</td>
-		<td width="32%" id="elizabeth-status" bgcolor="grey" class="tube-status-cell">Unknown</td>
+		<td width="32%" id="elizabeth-status" style="background-color:grey" class="tube-status-cell">Unknown</td>
 		</tr>
 		</table>
 	</div>
