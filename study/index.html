@@ -95,12 +95,12 @@ function handleTickInitWorld(tick) {
       var d = Tick.helper.date();
 	  var utcDateString = d.toISOString();
 	  var utcDate = new Date(utcDateString);
-	  utcDate.setHours(utcDate.getHours() + 8);
+	  utcDate.setUTCHours(utcDate.getUTCHours() + 8);
 	  d = utcDate;
       tick.value = {
           sep: ':',
-          hours: d.getHours(),
-          minutes: d.getMinutes()
+          hours: d.getUTCHours(),
+          minutes: d.getUTCMinutes()
       };
   });
 }
