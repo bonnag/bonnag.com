@@ -10,9 +10,9 @@ This way there's less fiddly clicking and dragging about, plus it opens up the p
 
 Or even AI generated physical objects (is that wise?).
 
-I used https://openscad.org/ to turn simple instructions into 3d models that BambuStudio could print. It reminded me a bit of using [Logo to move turtles](https://www.transum.org/software/Logo/).
+I used [OpenSCAD](https://openscad.org/) to turn simple instructions into 3d models that BambuStudio could print. It reminded me a bit of using [Logo to move turtles](https://www.transum.org/software/Logo/).
 
-Here's the code - can you guess what it is yet?
+Here's the code - with comments - can you guess what it is yet?
 
 ```
 // the final part is made up of the first part,
@@ -60,7 +60,7 @@ difference() {
 }
 ```
 
-No idea? Well, it's a toothbrush holder:
+No idea? It's a toothbrush holder:
 
 ![Screenshot of OpenSCAD render of a toothbrush holder](toothbrush-render.PNG)
 
