@@ -33,7 +33,7 @@ difference() {
     translate([0,-64,10]) cylinder (h = 80, r = 20, center = true);
     translate([0,+64,10]) cylinder (h = 80, r = 20, center = true);
     // the larger hole in the middle is made in a similar way to the
-	// outer shape - by taking a 2d shape and "extruding" it vertically:
+    // outer shape - by taking a 2d shape and "extruding" it vertically:
     translate([0,0,10]) {
         linear_extrude(height = 80, center = true) {
             // the 2d shape is an elastic band around two seperated
