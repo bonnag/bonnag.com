@@ -68,6 +68,6 @@ And in physical form:
 
 ![Photo of 3d printed toothbrush holder](toothbrush-physical.jpg)
 
-Took about two hours to figure out how to make OpenSCAD and BambuStudio do what I want, and about three hours for the (Bambu Lab P1S)(https://uk.store.bambulab.com/products/p1s) to print it.
+Took about two hours to figure out how to make OpenSCAD and BambuStudio do what I want, and about three hours for the [Bambu Lab P1S](https://uk.store.bambulab.com/products/p1s) to print it.
 
 Unusually, this was almost cost-effective (well, ignoring the cost of the printer!) - about £2.50 of filament.
