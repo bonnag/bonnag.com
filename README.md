@@ -5,8 +5,6 @@
 
    * algorithmic trading and low latency systems;
    * sports betting and high volume transaction processing;
-   * Ethereum Solidity contract development.
-  
-We're proud to supply the software for [UbiTok.io](https://ubitok.io/), the unstoppable exchange for trading Ethereum tokens.
+   * Ethereum smart contract development.
 
 email: kieran @ bonnag.com
