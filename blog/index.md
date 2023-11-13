@@ -32,9 +32,8 @@ difference() {
     // the two identical cylinder shaped holes that get cut out near the ends:
     translate([0,-64,10]) cylinder (h = 80, r = 20, center = true);
     translate([0,+64,10]) cylinder (h = 80, r = 20, center = true);
-    // the larger hole for the toothpase in the middle is made in
-    // a similar way to the outer shape - by taking a 2d shape and
-    // "extruding" it vertically:
+    // the larger hole in the middle is made in a similar way to the
+	// outer shape - by taking a 2d shape and "extruding" it vertically:
     translate([0,0,10]) {
         linear_extrude(height = 80, center = true) {
             // the 2d shape is an elastic band around two seperated
@@ -63,12 +62,12 @@ difference() {
 
 No idea? Well, it's a toothbrush holder:
 
-TODO
+![Screenshot of OpenSCAD render of a toothbrush holder](toothbrush-render.png)
 
 And in physical form:
 
-TODO
+![Photo of 3d printed toothbrush holder](toothbrush-physical.jpg)
 
-Took about two hours to figure out how to make OpenSCAD and BambuStudio do what I want, and about three hours to print.
+Took about two hours to figure out how to make OpenSCAD and BambuStudio do what I want, and about three hours for the (Bambu Lab P1S)(https://uk.store.bambulab.com/products/p1s) to print it.
 
-Unusually, this was almost cost-effective (well, ignoring the cost of the printer!) - about £2 of filament.
+Unusually, this was almost cost-effective (well, ignoring the cost of the printer!) - about £2.50 of filament.
