@@ -62,7 +62,7 @@ difference() {
 
 No idea? Well, it's a toothbrush holder:
 
-![Screenshot of OpenSCAD render of a toothbrush holder](toothbrush-render.png)
+![Screenshot of OpenSCAD render of a toothbrush holder](toothbrush-render.PNG)
 
 And in physical form:
 
