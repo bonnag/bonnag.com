@@ -147,7 +147,7 @@ function handleRawTflArrivals(data) {
 		var expected = new Date(currentValue.expectedArrival);
 		var expectedMillis = expected.getTime();
 		var cutoffMillis = cutoff.getTime();
-		return (currentValue.lineName == "195" || currentValue.lineName == "E8") &&	expectedMillis > cutoffMillis;
+		return (currentValue.lineName == "195" || currentValue.lineName == "E8" || currentValue.lineName == "E2") && expectedMillis > cutoffMillis;
 	});
 	console.log(relevantRawBuses);
 	tflArrivalData = relevantRawBuses.map(function(currentValue, index, array) {
