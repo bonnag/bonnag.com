@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>One Dimensional Art</title>
+</head>
+<body>
+    <h2>One Dimensional Art</h2>
+    <input type="file" id="imageInput" accept="image/*">
+	<table>
+	<tr>
+	<td>&nbsp;</td>
+	<td>
+	<canvas id="horizontalCanvas" width="1000" height="50" style="border:1px solid #000;">
+        Your browser does not support the HTML5 canvas tag.
+    </canvas>
+	</td>
+	</tr>
+	<tr>
+	<td>
+	<canvas id="verticalCanvas" width="50" height="1000" style="border:1px solid #000;">
+        Your browser does not support the HTML5 canvas tag.
+    </canvas>
+	</td>
+	<td>
+    <img id="previewImage" src="" alt="Image preview" style="border:1px solid #000;">
+	</td>
+	</tr>
+	</table>
+    <script>
+		var canvas = document.createElement('canvas');
+		var context = canvas.getContext('2d', { alpha: false, willReadFrequently: true});
+		var imgElement = document.getElementById('previewImage');
+		imgElement.onload = function() {
+			canvas.width = imgElement.width;
+			canvas.height = imgElement.height;
+			context.drawImage(imgElement, 0, 0, imgElement.width, imgElement.height);
+			var hArt = document.getElementById('horizontalCanvas');
+			hArt.width = imgElement.width;
+			var vArt = document.getElementById('verticalCanvas');
+			vArt.height = imgElement.height;
+		};
+		imgElement.addEventListener('click', function(event) {
+            var imgElement = event.target;
+			var newContext = canvas.getContext('2d', { alpha: false, willReadFrequently: true});
+			var imageData = newContext.getImageData(0, 0, canvas.width, canvas.height);
+            var widthRatio = imgElement.naturalWidth / imgElement.offsetWidth;
+            var heightRatio = imgElement.naturalHeight / imgElement.offsetHeight;
+            var clickX = Math.floor(0.5 + event.offsetX * widthRatio);
+            var clickY = Math.floor(0.5 + event.offsetY * heightRatio);
+			var hArt = document.getElementById('horizontalCanvas');
+			var hCtx = hArt.getContext('2d', { alpha: false, willReadFrequently: true});
+			var hImageData = hCtx.getImageData(0, 0, hArt.width, hArt.height);
+			var vArt = document.getElementById('verticalCanvas');
+			var vCtx = vArt.getContext('2d', { alpha: false, willReadFrequently: true});
+			var vImageData = vCtx.getImageData(0, 0, vArt.width, vArt.height);
+			for (var x = 0; x < imgElement.width; x++) {
+				for (var y = 0; y < hArt.height; y++) {
+					var srcIdx = (x + clickY * imgElement.width) * 4;
+					var dstIdx = (x + y * hArt.width) * 4;
+					for (var p = 0; p < 4; p++) {
+						var v = imageData.data[srcIdx + p];
+						hImageData.data[dstIdx + p] = v;
+					}
+				}				
+			}
+			hCtx.putImageData(hImageData, 0, 0, 0, 0, hArt.width, hArt.height);
+			for (var y = 0; y < imgElement.height; y++) {
+				for (var x = 0; x < vArt.width; x++) {
+					var srcIdx = (clickX + y * imgElement.width) * 4;
+					var dstIdx = (x + y * vArt.width) * 4;
+					for (var p = 0; p < 4; p++) {
+						var v = imageData.data[srcIdx + p];
+						vImageData.data[dstIdx + p] = v;
+					}
+				}				
+			}
+			vCtx.putImageData(vImageData, 0, 0, 0, 0, vArt.width, vArt.height);
+        });		
+        document.getElementById('imageInput').addEventListener('change', function(event) {
+            var file = event.target.files[0];
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var imgElement = document.getElementById('previewImage');
+                    imgElement.src = e.target.result;
+                    imgElement.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
+	<noscript>
+	Your browser does not support Javascript
+	</noscript>
+</body>
+</html>
