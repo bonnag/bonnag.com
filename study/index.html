@@ -68,6 +68,19 @@ table {
 	padding-top: 48px;
 	font-size: 50%;
 }
+#carousel {
+	display: flex;
+	gap: 20px; /* Optional gap between the divs */
+	justify-content: center; /* Center-align the divs horizontally */
+	margin: 20px; /* Optional margin around the container */  
+}
+
+.carousel-item {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+}
+
 #countdown-container {
   position: relative;
   width: 400px;
@@ -523,8 +536,13 @@ function init()
 		</table>
 	</div>
 	<div class="credits">
-		<div id="countdown-container">
-			<div id="countdown">
+		<div id="carousel">
+			<div id="countdown-container">
+				<div id="countdown">
+				</div>
+			</div>
+			<div class="carousel-item">
+				<img width="361" height="400" src="cifer-chair.png"/>
 			</div>
 		</div>
 		<p>
