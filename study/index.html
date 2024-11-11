@@ -68,6 +68,27 @@ table {
 	padding-top: 48px;
 	font-size: 50%;
 }
+#countdown-container {
+  position: relative;
+  width: 400px;
+  height: 400px;
+  background-color: #f0f0f0;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-family: Arial, sans-serif;
+  color: #ffa080;
+  background-image: url('xmas.webp');
+  background-size: cover;
+  background-position: center;  
+}
+#countdown {
+  font-size: 6em;
+  font-weight: bold;
+  text-shadow: 0 0 10px #ff3d00, 0 0 20px #ff3d00, 0 0 30px #ff3d00, 0 0 40px #ff7f50, 0 0 70px #ff7f50;
+}
 </style>
 <script src="./flip/flip.min.js"></script>
 <script>
@@ -417,6 +438,33 @@ function saveRdmApiKey() {
 	localStorage.setItem("rdmApiKey", key);
 }
 
+function updateCountdown() {
+  // Get current time and Christmas time for the current year
+  const now = new Date();
+  const currentYear = now.getUTCFullYear();
+  
+  // Set the Christmas date with UTC midnight time for UK timezone
+  const christmas = new Date(Date.UTC(currentYear, 11, 25, 0, 0, 0)); // December 25th, 00:00:00
+
+  // If Christmas is in the past for this year, set to next year's Christmas
+  if (now > christmas) {
+	christmas.setUTCFullYear(currentYear + 1);
+  }
+
+  // Calculate the difference in milliseconds
+  const diffInMs = christmas - now;
+
+  // Convert difference to days, hours, minutes, and seconds
+  const days = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diffInMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((diffInMs % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((diffInMs % (1000 * 60)) / 1000);
+
+  // Display the countdown text
+  document.getElementById("countdown").innerText = 
+	`${days} days\nuntil Christmas!`;
+}
+
 function init()
 {
 	loadTflApiKey();
@@ -425,8 +473,10 @@ function init()
 	tflArrivals();
 	tflStatus();
 	rdmDepartures();
+	updateCountdown();
 	window.setInterval(renderArrivalsToAvoidStaleness, 45 * 1000);
 	window.setInterval(checkTflStatusStale, 45 * 1000);
+	setInterval(updateCountdown, 60 * 1000);
 }
 
 </script>
@@ -473,9 +523,10 @@ function init()
 		</table>
 	</div>
 	<div class="credits">
-		<p>
-			<img src="exams-over.webp" width="400" height="400"/>
-		</p>
+		<div id="countdown-container">
+			<div id="countdown">
+			</div>
+		</div>
 		<p>
 		Powered by: pqina.nl, TFL APIs, RDM/LDBWS, github pages
 		</p>
