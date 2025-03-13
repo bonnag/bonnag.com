@@ -155,7 +155,9 @@ function handleTickInitTransport(tick) {
 }
 
 function tflArrivals() {
-	fetch('https://api.tfl.gov.uk/StopPoint/490004294H/Arrivals?app_key=' + tfl_api_key)
+    // 490004292F = Market Place Brentford
+	// 490004294H = Half Acre
+	fetch('https://api.tfl.gov.uk/StopPoint/490004292F/Arrivals?app_key=' + tfl_api_key)
     .then(function (response) {
         if (!response.ok) {
             throw new Error('Network response was not ok');
@@ -521,7 +523,7 @@ function init()
 		</ul>
 	</div>
 	<div class="below-caption-div">
-		Half Acre <img src="./buses-logo.png" class="inline-image">
+		Market Place <img src="./buses-logo.png" class="inline-image">
 		/
 		Brentford <img src="./national-rail-logo.png" class="inline-image">
 	</div>
