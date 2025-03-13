@@ -177,8 +177,8 @@ function tflArrivals() {
 
 function handleRawTflArrivals(data) {
 	var now = new Date();
-	// if it's less than three minutes in the future, we won't be able to get there in time
-	var cutoff = new Date(now.getTime() + 3 * 60 * 1000);
+	// if it's only a tiny bit in the future, we won't be able to get there in time
+	var cutoff = new Date(now.getTime() + 80 * 1000);
 	const relevantRawBuses = data.filter(function(currentValue, index, array) {
 		var expected = new Date(currentValue.expectedArrival);
 		var expectedMillis = expected.getTime();
