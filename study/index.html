@@ -80,7 +80,12 @@ table {
       align-items: center;
       justify-content: center;
 }
-
+#airplane-overhead {
+  width: 400px;
+  height: 400px;
+  font-size: 200%;
+  color: white;
+}
 #countdown-container {
   position: relative;
   width: 400px;
@@ -480,6 +485,156 @@ function updateCountdown() {
 	`${days} days &\n ${hours} hours\nuntil Christmas!`;
 }
 
+function clearAirplane()
+{
+	const countdownDiv = document.getElementById("countdown-container");
+	const airplaneDiv = document.getElementById("airplane-overhead");
+	countdownDiv.style.display = "";
+	airplaneDiv.style.display = "none";
+}
+
+function showAirplane(callsign, airlineName, originPlace, destinationPlace)
+{
+	console.log(callsign, airlineName, originPlace, destinationPlace);
+	const countdownDiv = document.getElementById("countdown-container");
+	const airplaneDiv = document.getElementById("airplane-overhead");
+	countdownDiv.style.display = "none";
+	// TODO - prettier
+	airplaneDiv.innerHTML = "" + callsign + ", " + airlineName + ", " + originPlace + ", " + destinationPlace;
+	airplaneDiv.style.display = "";
+}
+
+function handleCallsign(callsign)
+{
+	// e.g.
+	// {
+	//   "response": {
+	//     "flightroute": {
+	//       "callsign": "EZY2926",
+	//       "callsign_icao": "EZY2926",
+	//       "callsign_iata": "U22926",
+	//       "airline": {
+	//         "name": "easyJet",
+	//         "icao": "EZY",
+	//         "iata": "U2",
+	//         "country": "United Kingdom",
+	//         "country_iso": "GB",
+	//         "callsign": "EASY"
+	//       },
+	//       "origin": {
+	//         "country_iso_name": "NL",
+	//         "country_name": "Netherlands",
+	//         "elevation": -11,
+	//         "iata_code": "AMS",
+	//         "icao_code": "EHAM",
+	//         "latitude": 52.308601,
+	//         "longitude": 4.76389,
+	//         "municipality": "Amsterdam",
+	//         "name": "Amsterdam Airport Schiphol"
+	//       },
+	//       "destination": {
+	//         "country_iso_name": "GB",
+	//         "country_name": "United Kingdom",
+	//         "elevation": 622,
+	//         "iata_code": "BRS",
+	//         "icao_code": "EGGD",
+	//         "latitude": 51.382702,
+	//         "longitude": -2.71909,
+	//         "municipality": "Bristol",
+	//         "name": "Bristol Airport"
+	//       }
+	//     }
+	//   }
+	// }
+	fetch('https://api.adsbdb.com/v0/callsign/' + callsign)
+	.then(function (response) {
+		if (!response.ok) {
+			console.error('The reponse was not ok: ', response);
+		}
+		return response.json();
+	})
+	.then(function (data) {
+		console.log(data);
+		if (data && data.response && data.response.flightroute && data.response.flightroute.airline && data.response.flightroute.origin && data.response.flightroute.destination) {
+			showAirplane(
+			  callsign,
+			  data.response.flightroute.airline.name,
+			  data.response.flightroute.origin.municipality,
+			  data.response.flightroute.destination.municipality
+			)
+		} else {
+			clearAirplane();
+		}
+	})
+	.catch(function (error) {
+		console.error('There was a problem with the fetch operation:', error);
+	});
+}
+
+// index 13 (float) less than 2000
+
+function handleAirplanesOverhead(data)
+{
+	// e.g.
+	// {
+	//   "time": 1750012709,
+	//   "states": [
+	//   [
+	//       "76ceef",
+	//       "SIA318  ",
+	//       "Singapore",
+	//       1750012708, 1750012709, -0.2739, 51.4781, 525.78, false, 79.22, 270, -4.23, null, 678.18, "3231",
+	//       false, 0]
+	//   ]
+	// }
+
+	// index 1 = callsign
+	// index 13 = geometric altitude
+	const callsign = (data.states || []).find(
+		state => typeof state[13] === 'number' && state[13] < 2000.0
+	)?.[1]?.trim() || "";
+	if (callsign == "") {
+		clearAirplane();
+	} else {
+		console.log(callsign);
+		handleCallsign(callsign);
+	}
+}
+
+function airplaneOverheadInner()
+{
+	fetch('https://opensky-network.org/api/states/all?lamin=51.43&lomin=-0.32&lamax=51.52&lomax=-0.24')
+	.then(function (response) {
+		if (!response.ok) {
+			console.error('The reponse was not ok: ', response);
+			clearAirplane();
+		}
+		return response.json();
+	})
+	.then(function (data) {
+		console.log(data);
+		handleAirplanesOverhead(data);
+	})
+	.catch(function (error) {
+		console.error('There was a problem with the fetch operation:', error);
+		clearAirplane();
+	});
+}
+
+function airplaneOverhead()
+{
+    // anon clients only get 400 per day
+    try {
+		airplaneOverheadInner();
+    } catch (e) {
+		console.error(e);
+		clearAirplane();
+    }
+	window.setTimeout(airplaneOverhead, 220 * 1000);
+}
+
+
+
 function init()
 {
 	loadTflApiKey();
@@ -489,6 +644,7 @@ function init()
 	tflStatus();
 	rdmDepartures();
 	updateCountdown();
+	airplaneOverhead();
 	window.setInterval(renderArrivalsToAvoidStaleness, 45 * 1000);
 	window.setInterval(checkTflStatusStale, 45 * 1000);
 	setInterval(updateCountdown, 60 * 1000);
@@ -543,12 +699,14 @@ function init()
 				<div id="countdown">
 				</div>
 			</div>
+			<div id="airplane-overhead" class="carousel-item">
+			</div>
 			<div class="carousel-item">
 				<img width="361" height="400" src="cifer-chair.png"/>
 			</div>
 		</div>
 		<p>
-		Powered by: pqina.nl, TFL APIs, RDM/LDBWS, github pages
+		Powered by: pqina.nl, TFL APIs, RDM/LDBWS, opensky, adsbdb.com, github pages
 		</p>
 		<p>
 			<form>
