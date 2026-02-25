@@ -465,14 +465,25 @@ function updateCountdown() {
   
   // Set the Christmas date with UTC midnight time for UK timezone
   const christmas = new Date(Date.UTC(currentYear, 11, 25, 0, 0, 0)); // December 25th, 00:00:00
+  const alevels = new Date(Date.UTC(currentYear, 5, 2, 7, 15, 0)); // June 2nd, 8:15 BST
 
   // If Christmas is in the past for this year, set to next year's Christmas
   if (now > christmas) {
 	christmas.setUTCFullYear(currentYear + 1);
   }
 
+  const alevelsFirst = alevels < christmas;
+  nextEvent = alevelsFirst ? alevels : christmas;
+  nextEventName = alevelsFirst ? "A-Levels" : "Christmas";
+  const container = document.getElementById("countdown-container");
+  if (alevelsFirst) {
+	container.style.backgroundImage = "url('alevels.jpeg')";
+  } else {
+	container.style.backgroundImage = "url('xmas.webp')";
+  }
+
   // Calculate the difference in milliseconds
-  const diffInMs = christmas - now;
+  const diffInMs = nextEvent - now;
 
   // Convert difference to days, hours, minutes, and seconds
   const days = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
@@ -482,7 +493,7 @@ function updateCountdown() {
 
   // Display the countdown text
   document.getElementById("countdown").innerText = 
-	`${days} days &\n ${hours} hours\nuntil Christmas!`;
+	`${days} days &\n ${hours} hours\nuntil ${nextEventName}!`;
 }
 
 function clearAirplane()
