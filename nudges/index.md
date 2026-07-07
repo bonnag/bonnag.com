@@ -53,4 +53,4 @@ Bonnag is just a goal-reminder bot — it isn't built to help with a crisis, and
 
 ---
 
-<p class="small"><a href="/nudges/privacy/">Privacy</a> · <a href="/nudges/terms/">Terms</a> · Questions: <a href="mailto:kieran@bonnag.com">kieran@bonnag.com</a></p>
+<p class="small"><a href="/nudges/privacy/">Privacy</a> · <a href="/nudges/terms/">Terms</a> · Questions: <a href="mailto:nudges@bonnag.com">nudges@bonnag.com</a></p>

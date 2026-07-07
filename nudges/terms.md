@@ -54,8 +54,8 @@ These terms are governed by the laws of **England and Wales**, and disputes are 
 
 ## 10. Contact
 
-Questions about these terms: **[kieran@bonnag.com](mailto:kieran@bonnag.com)**.
+Questions about these terms: **[nudges@bonnag.com](mailto:nudges@bonnag.com)**.
 
 ---
 
-<p class="small"><a href="/nudges/">Home</a> · <a href="/nudges/tips/">Tips</a> · <a href="/nudges/privacy/">Privacy</a> · <a href="mailto:kieran@bonnag.com">kieran@bonnag.com</a></p>
+<p class="small"><a href="/nudges/">Home</a> · <a href="/nudges/tips/">Tips</a> · <a href="/nudges/privacy/">Privacy</a> · <a href="mailto:nudges@bonnag.com">nudges@bonnag.com</a></p>

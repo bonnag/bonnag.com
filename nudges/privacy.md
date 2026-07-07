@@ -14,7 +14,7 @@ permalink: /nudges/privacy/
 
 The data controller for the Bonnag nudge assistant is **Kieran Elby**.
 
-Contact: **[kieran@bonnag.com](mailto:kieran@bonnag.com)**.
+Contact: **[nudges@bonnag.com](mailto:nudges@bonnag.com)**.
 
 ## What this covers
 
@@ -69,7 +69,7 @@ You can, at any time, simply by messaging Bonnag:
 - **Get a copy of your data** — message **"export my data"** and Bonnag sends you everything it holds about you.
 - **Be forgotten** — message **"forget me"**; after you confirm, Bonnag erases your information and conversation history.
 
-You also have rights under UK data protection law to access, correct, or restrict the use of your data, and to complain to the **Information Commissioner's Office (ICO)** at [ico.org.uk](https://ico.org.uk). To exercise any right, or if something isn't working through the bot, email **[kieran@bonnag.com](mailto:kieran@bonnag.com)**.
+You also have rights under UK data protection law to access, correct, or restrict the use of your data, and to complain to the **Information Commissioner's Office (ICO)** at [ico.org.uk](https://ico.org.uk). To exercise any right, or if something isn't working through the bot, email **[nudges@bonnag.com](mailto:nudges@bonnag.com)**.
 
 ### Deletion
 
@@ -93,4 +93,4 @@ We may update this policy. Material changes will be reflected here with a new "l
 
 ---
 
-<p class="small"><a href="/nudges/">Home</a> · <a href="/nudges/tips/">Tips</a> · <a href="/nudges/terms/">Terms</a> · <a href="mailto:kieran@bonnag.com">kieran@bonnag.com</a></p>
+<p class="small"><a href="/nudges/">Home</a> · <a href="/nudges/tips/">Tips</a> · <a href="/nudges/terms/">Terms</a> · <a href="mailto:nudges@bonnag.com">nudges@bonnag.com</a></p>
