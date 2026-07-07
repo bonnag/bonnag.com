@@ -6,3 +6,24 @@
 section {
   float: none;
 }
+
+/* Bonnag nudges pages */
+.draft {
+  background: #fff3cd;
+  border: 1px solid #ffe08a;
+  color: #664d03;
+  padding: 0.7em 1em;
+  border-radius: 6px;
+}
+.draft code {
+  background: rgba(0, 0, 0, 0.06);
+  padding: 0 0.3em;
+  border-radius: 3px;
+}
+.small {
+  font-size: 0.85em;
+  opacity: 0.7;
+}
+a.todo {
+  color: #b00020;
+}
