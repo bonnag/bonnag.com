@@ -37,6 +37,8 @@ We use your information solely to provide the nudge service — to understand yo
 
 Legal basis: your consent (given by choosing to use the service) and/or our legitimate interest in providing a service you asked for.
 
+If you ask Bonnag to track sensitive personal data (such as health-related information, including weight), we will confirm with you that we have your explicit consent to store it.
+
 ## Where your data is held, and who processes it
 
 Your data is stored on a server in **London, United Kingdom** (hosted by OVH).
@@ -81,7 +83,7 @@ If your messages suggest you may be at risk (for example, self-harm or a crisis)
 
 ## Security
 
-Messages between WhatsApp and Bonnag are transmitted over encrypted connections, and inbound requests to Bonnag are authenticated. No system is perfectly secure, but we take reasonable steps to protect your information. Upon receiving any notification of a security incident, we will immediately isolate the affected data, assess the impact, and — where required by the UK GDPR — notify the Information Commissioner's Office (ICO) and any affected individuals within 72 hours.
+Messages between WhatsApp and Bonnag are transmitted over encrypted connections, and inbound requests to Bonnag are authenticated. We also keep all personal data encrypted at rest. No system is perfectly secure, but we take reasonable steps to protect your information. Upon receiving any notification of a security incident, we will immediately isolate the affected data, assess the impact, and — where required by the UK GDPR — notify the Information Commissioner's Office (ICO) and any affected individuals within 72 hours.
 
 ## This website
 
