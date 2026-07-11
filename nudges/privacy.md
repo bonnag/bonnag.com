@@ -8,7 +8,7 @@ permalink: /nudges/privacy/
 
 # Privacy policy
 
-*Last updated: 2026-07-07*
+*Last updated: 2026-07-11*
 
 ## Who is responsible for your data
 
@@ -35,9 +35,11 @@ We **do not** open, store, or process images, videos, or links you send, and we 
 
 We use your information solely to provide the nudge service — to understand your requests, send your nudges and reminders, remember your progress, and keep the service safe and within messaging limits.
 
-Legal basis: your consent (given by choosing to use the service) and/or our legitimate interest in providing a service you asked for.
+**Running the service (general).** For your name, goals, schedule, reminders and message history, we rely on your **consent** (Article 6(1)(a) UK GDPR), given by choosing to use the service, and on our **legitimate interest** in providing the service you asked us for (Article 6(1)(f)).
 
-If you ask Bonnag to track sensitive personal data (such as health-related information, including weight), we will confirm with you that we have your explicit consent to store it.
+**Health-related data.** Some things people track — such as **weight, diet or calories** — count as "special category" health data. We store and use this only with your **explicit consent** (Article 9(2)(a), together with Article 6(1)(a)). Bonnag asks you for this in the chat before storing anything health-related, and you can withdraw it at any time by dropping the goal or asking to be forgotten. If you decline, you can still use every other part of the service.
+
+**Keeping you safe.** We check incoming messages for signs of serious risk (such as self-harm or an eating disorder) so we can respond responsibly. We do this on the basis of our **legitimate interests** in keeping users safe (Article 6(1)(f)) and, where someone may be at serious risk, their **vital interests** (Article 6(1)(d)); where this involves health-related information we rely on the **safeguarding** condition in Schedule 1 of the Data Protection Act 2018. **This safety checking does not depend on your consent** — it applies to everyone, including anyone who declines health-data consent, because it is how we keep the service safe.
 
 ## Where your data is held, and who processes it
 
